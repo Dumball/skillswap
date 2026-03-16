@@ -110,8 +110,7 @@ const Dashboard = ({ onNavigate }) => {
         setAdding(true);
         try {
             const res = await apiService.addSkill({
-                ...newSkill,
-                skill_level: 'Intermediate' // Standard entry level
+                ...newSkill
             });
             setShowAddSkill(false);
             setNewSkill({ skill_name: '', skill_category: 'Design', skill_level: 'Beginner', portfolio_link: '' });
@@ -204,15 +203,19 @@ const Dashboard = ({ onNavigate }) => {
                                             <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>Category</label>
                                             <select 
                                                 className="filter-select" 
-                                                style={{ width: '100%', height: '44px' }}
+                                                style={{ width: '100%', height: '44px', color: 'white', background: 'rgba(255,255,255,0.05)' }}
                                                 value={newSkill.skill_category}
-                                                onChange={e => setNewSkill({...newSkill, skill_category: e.target.value})}
+                                                onChange={e => {
+                                                    console.log("Category changed to:", e.target.value);
+                                                    setNewSkill({...newSkill, skill_category: e.target.value});
+                                                }}
                                             >
                                                 <option value="Design">Design</option>
                                                 <option value="Development">Development</option>
                                                 <option value="Marketing">Marketing</option>
                                                 <option value="Writing">Writing</option>
                                                 <option value="Video">Video</option>
+                                                <option value="Data Science">Data Science</option>
                                             </select>
                                         </div>
                                     </div>

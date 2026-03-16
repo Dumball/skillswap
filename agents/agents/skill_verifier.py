@@ -77,11 +77,17 @@ class SkillVerifierAgent:
                 HumanMessage(content=CHALLENGE_PROMPT.format(skill_name=skill_name))
             ]
             response = await self.llm.ainvoke(messages)
+            import re
             try:
-                # Strip markdown code fences if present
-                content = response.content.strip().strip("```json").strip("```").strip()
+                # Find JSON block using regex if possible
+                json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
+                if json_match:
+                    content = json_match.group(0)
+                else:
+                    # Fallback to stripping
+                    content = response.content.strip().strip("```json").strip("```").strip()
                 data = json.loads(content)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, AttributeError):
                 data = {"challenge": response.content, "example_solution_hints": [], "evaluation_criteria": []}
 
             return {
@@ -105,10 +111,16 @@ class SkillVerifierAgent:
                 ))
             ]
             response = await self.llm.ainvoke(messages)
+            import re
             try:
-                content = response.content.strip().strip("```json").strip("```").strip()
+                # Find JSON block using regex if possible
+                json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
+                if json_match:
+                    content = json_match.group(0)
+                else:
+                    content = response.content.strip().strip("```json").strip("```").strip()
                 data = json.loads(content)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, AttributeError):
                 data = {"score": 0, "passed": False, "feedback": response.content, "strengths": [], "improvements": []}
 
             score = data.get("score", 0)

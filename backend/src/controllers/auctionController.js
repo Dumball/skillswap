@@ -188,7 +188,11 @@ const getUserDashboardData = async (req, res) => {
             recentExchanges: recentExchanges.rows
         });
     } catch (error) {
-        console.error('getUserDashboardData Error:', error);
+        console.error('getUserDashboardData Error Detail:', {
+            userId: req.user ? req.user.id : 'missing',
+            message: error.message,
+            stack: error.stack
+        });
         res.status(500).json({ message: 'Server error retrieving dashboard data' });
     }
 };

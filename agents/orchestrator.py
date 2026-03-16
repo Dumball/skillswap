@@ -32,9 +32,9 @@ class AgentOrchestrator:
         self.neo4j = neo4j
         self.redis = redis
         
-        # Switch to Groq (Llama 3.3 70B is a great versatile model)
+        # Use Groq model from environment
         self.llm = ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
             temperature=0.7,
             groq_api_key=os.getenv("GROQ_API_KEY")
         )

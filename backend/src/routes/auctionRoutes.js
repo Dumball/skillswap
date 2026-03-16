@@ -12,10 +12,9 @@ const { verifyToken } = require('../middlewares/auth');
 
 router.post('/create', verifyToken, createAuction);
 router.get('/all', getAllAuctions); // Publicly viewable
+router.get('/dashboard', verifyToken, getUserDashboardData);
 router.get('/:id', getAuctionById); // Publicly viewable
 router.put('/update/:id', verifyToken, updateAuction);
 router.delete('/delete/:id', verifyToken, deleteAuction);
-
-router.get('/dashboard', verifyToken, getUserDashboardData);
 
 module.exports = router;

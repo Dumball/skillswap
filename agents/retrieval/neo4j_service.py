@@ -67,12 +67,12 @@ class Neo4jService:
             return []
         with self.driver.session() as session:
             result = session.run(
-                """
-                MATCH (s:Skill {name: $name})-[r*1..$depth]-(related:Skill)
+                f"""
+                MATCH (s:Skill {{name: $name}})-[r*1..{depth}]-(related:Skill)
                 RETURN related.name as skill, type(r[0]) as relationship
                 LIMIT 20
                 """,
-                name=skill_name, depth=depth
+                name=skill_name
             )
             return [{"skill": r["skill"], "relationship": r["relationship"]} for r in result]
 

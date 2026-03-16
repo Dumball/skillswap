@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     avatar_url VARCHAR(255),
     reputation_score DECIMAL(3, 2) DEFAULT 0.00,
-    skill_credits INTEGER DEFAULT 0,
+    skill_credits INTEGER DEFAULT 100,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS skills (
     skill_category VARCHAR(100) NOT NULL,
     skill_level VARCHAR(50) NOT NULL,
     verified BOOLEAN DEFAULT FALSE,
+    verification_score INTEGER,
     portfolio_link VARCHAR(255),
+    last_verified_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

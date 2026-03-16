@@ -21,9 +21,9 @@ const registerUser = async (req, res) => {
         // Hash password
         const password_hash = await hashPassword(password);
 
-        // Insert new user
+        // Insert new user with 100 starting credits
         const newUser = await db.query(
-            'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, reputation_score, skill_credits',
+            'INSERT INTO users (name, email, password_hash, skill_credits) VALUES ($1, $2, $3, 100) RETURNING id, name, email, reputation_score, skill_credits',
             [name, email, password_hash]
         );
 

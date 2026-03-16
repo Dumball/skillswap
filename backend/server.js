@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -17,15 +18,16 @@ const initSockets = require('./src/sockets');
 const io = initSockets(server);
 
 // Security Middlewares
+app.use(compression());
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json());
 
 // Rate Limiter
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-    message: 'Too many requests from this IP, please try again after 15 minutes.',
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 1000, // Increased for development
+    message: 'Too many requests from this IP, please try again after 1 minute.',
 });
 app.use('/api/', apiLimiter);
 

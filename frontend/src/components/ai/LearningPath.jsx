@@ -95,7 +95,25 @@ const LearningPath = ({ onNavigate }) => {
                 {path && (
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <h3 style={{ margin: 0 }}>Your Roadmap to <span style={{ color: '#5b7cff' }}>{path.target_skill}</span></h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <h3 style={{ margin: 0 }}>Your Roadmap to <span style={{ color: '#5b7cff' }}>{path.target_skill}</span></h3>
+                                <button
+                                    onClick={() => {
+                                        const text = path.path.map(s => `Stage ${s.stage}: ${s.title}\nDuration: ${s.duration}\nTopics: ${s.topics.join(', ')}\nTip: ${s.skill_swap_tip}\n`).join('\n---\n\n');
+                                        navigator.clipboard.writeText(text);
+                                        alert('Roadmap copied to clipboard!');
+                                    }}
+                                    style={{
+                                        padding: '4px 12px', fontSize: '11px', borderRadius: '15px',
+                                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                        color: '#a0a4b8', cursor: 'pointer', transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'white'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#a0a4b8'; }}
+                                >
+                                    📋 Copy Text
+                                </button>
+                            </div>
                             {path.prerequisites_found?.length > 0 && (
                                 <div style={{ fontSize: '13px', color: '#a0a4b8' }}>
                                     Prerequisites: {path.prerequisites_found.join(', ')}
