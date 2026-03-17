@@ -25,18 +25,31 @@ const ChatPanel = () => {
         setLoading(true);
 
         try {
-            const res = await fetch('/api/agents/chat', {
+            // Build the API URL using environment variable or fallback to relative path
+            const apiUrl = import.meta.env.VITE_API_URL 
+                ? `${import.meta.env.VITE_API_URL}/api/agents/chat`
+                : '/api/agents/chat';
+            
+            console.log('[CHAT] Sending message to:', apiUrl);
+            
+            const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: userMsg, session_id: sessionId })
             });
+            
+            console.log('[CHAT] Response status:', res.status);
+            
             const data = await res.json();
-            if (data.fallback) {
+            console.log('[CHAT] Response data:', data);
+            
+            if (data.fallback || !res.ok) {
                 setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ AI service is offline. Start the Python agent service to enable AI features.' }]);
             } else {
-                setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+                setMessages(prev => [...prev, { role: 'assistant', content: data.response || 'No response received' }]);
             }
-        } catch {
+        } catch (error) {
+            console.error('[CHAT] Error:', error);
             setMessages(prev => [...prev, { role: 'assistant', content: '❌ Could not connect to the AI service.' }]);
         } finally {
             setLoading(false);

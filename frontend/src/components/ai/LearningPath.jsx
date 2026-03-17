@@ -20,7 +20,15 @@ const LearningPath = ({ onNavigate }) => {
         setPath(null);
 
         try {
-            const res = await fetch('/api/agents/learning-path', {
+            // Build the API URL using environment variable or fallback to relative path
+            const apiUrl = import.meta.env.VITE_API_URL 
+                ? `${import.meta.env.VITE_API_URL}/api/agents/learning-path`
+                : '/api/agents/learning-path';
+            
+            console.log('[LEARNING] Generating path via:', apiUrl);
+            console.log('[LEARNING] Target skill:', targetSkill);
+            
+            const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -28,13 +36,19 @@ const LearningPath = ({ onNavigate }) => {
                     current_skills: currentSkills.split(',').map(s => s.trim()).filter(Boolean)
                 })
             });
+            
+            console.log('[LEARNING] Response status:', res.status);
+            
             const data = await res.json();
-            if (data.fallback || data.error) {
+            console.log('[LEARNING] Response data:', data);
+            
+            if (data.fallback || data.error || !res.ok) {
                 setError('AI service is offline. Start the Python agent service to use this feature.');
             } else {
                 setPath(data);
             }
-        } catch {
+        } catch (error) {
+            console.error('[LEARNING] Error:', error);
             setError('Could not connect to AI service.');
         } finally {
             setLoading(false);
