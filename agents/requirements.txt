@@ -17,3 +17,4 @@ asyncpg==0.30.0
 aiohttp==3.11.11
 langchain-groq==0.2.2
 tf-keras
+slowapi==0.1.9
