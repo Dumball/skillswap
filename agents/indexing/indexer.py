@@ -58,7 +58,7 @@ class DataIndexer:
 
     async def seed_initial_data(self):
         """Seed Qdrant with platform knowledge and Neo4j skill graph"""
-        print("Books Seeding initial platform data...")
+        print("Seeding initial platform data...")
 
         # Seed Qdrant with platform knowledge
         documents = [

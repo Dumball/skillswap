@@ -18,3 +18,5 @@ aiohttp==3.11.11
 langchain-groq==0.2.2
 tf-keras
 slowapi==0.1.9
+gunicorn==23.0.0
+uvloop==0.21.0

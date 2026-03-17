@@ -241,7 +241,23 @@ async def architecture():
     }
 
 
+import uvicorn
+
 if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    # Render and other PaaS providers inject PORT environment variable
+    # We prioritize PORT, then AGENTS_PORT, then default to 8000
+    port = int(os.environ.get("PORT", os.environ.get("AGENTS_PORT", 8000)))
+    
+    print(f"--- Starting Server ---")
+    print(f"Host: 0.0.0.0")
+    print(f"Port: {port}")
+    print(f"-----------------------")
+    
+    uvicorn.run(
+        "main:app", 
+        host="0.0.0.0", 
+        port=port, 
+        log_level="info",
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+    )
