@@ -42,6 +42,7 @@ const adminRoutes = require('./src/routes/adminRoutes'); // Includes credits too
 const agentRoutes = require('./src/routes/agentRoutes');
 const activityRoutes = require('./src/routes/activityRoutes');
 const skillRoutes = require('./src/routes/skillRoutes');
+const chatRoutes = require('./src/routes/chatRoutes');
 
 // Register Routes
 app.use('/api/auth', authRoutes);
@@ -55,6 +56,7 @@ app.use('/api/credits', adminRoutes); // Reusing the router for /credits/list
 app.use('/api/agents', agentRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/skills', skillRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health Check Endpoint
 app.get('/health', (req, res) => {

@@ -129,8 +129,121 @@ const getUserBids = async (req, res) => {
     }
 };
 
+// @desc    Accept a bid
+// @route   PUT /api/bids/:id/accept
+const acceptBid = async (req, res) => {
+    try {
+        const bid_id = req.params.id;
+        const user_id = req.user.id;
+
+        // 1. Verify that the requester is the creator of the auction associated with the bid
+        const bidInfo = await db.query(
+            `SELECT b.auction_id, a.creator_id, b.bidder_id, b.skill_offered, b.credit_value 
+             FROM bids b 
+             JOIN auctions a ON b.auction_id = a.id 
+             WHERE b.id = $1`,
+            [bid_id]
+        );
+
+        if (bidInfo.rows.length === 0) {
+            return res.status(404).json({ message: 'Bid not found' });
+        }
+
+        const { auction_id, creator_id, bidder_id, skill_offered, credit_value } = bidInfo.rows[0];
+
+        if (creator_id !== user_id) {
+            return res.status(403).json({ message: 'Not authorized to accept this bid' });
+        }
+
+        // 2. Start transaction to ensure atomicity
+        await db.query('BEGIN');
+
+        // Update accepted bid status
+        await db.query('UPDATE bids SET status = $1 WHERE id = $2', ['accepted', bid_id]);
+
+        // Decline all other bids for this auction
+        await db.query('UPDATE bids SET status = $1 WHERE auction_id = $2 AND id != $3', ['declined', auction_id, bid_id]);
+
+        // Complete the auction
+        await db.query("UPDATE auctions SET status = 'completed' WHERE id = $1", [auction_id]);
+
+        // Create a transaction record
+        await db.query(
+            `INSERT INTO transactions (auction_id, creator_id, winner_id, agreed_skill, credit_value, status) 
+             VALUES ($1, $2, $3, $4, $5, 'active')`,
+            [auction_id, creator_id, bidder_id, skill_offered, credit_value]
+        );
+
+        await db.query('COMMIT');
+
+        res.json({ message: 'Bid accepted and auction completed' });
+    } catch (error) {
+        await db.query('ROLLBACK');
+        console.error('acceptBid Error:', error);
+        res.status(500).json({ message: 'Server error accepting bid' });
+    }
+};
+
+// @desc    Decline a bid
+// @route   PUT /api/bids/:id/decline
+const declineBid = async (req, res) => {
+    try {
+        const bid_id = req.params.id;
+        const user_id = req.user.id;
+
+        const bidInfo = await db.query(
+            `SELECT a.creator_id FROM bids b JOIN auctions a ON b.auction_id = a.id WHERE b.id = $1`,
+            [bid_id]
+        );
+
+        if (bidInfo.rows.length === 0) {
+            return res.status(404).json({ message: 'Bid not found' });
+        }
+
+        if (bidInfo.rows[0].creator_id !== user_id) {
+            return res.status(403).json({ message: 'Not authorized to decline this bid' });
+        }
+
+        await db.query('UPDATE bids SET status = $1 WHERE id = $2', ['declined', bid_id]);
+
+        res.json({ message: 'Bid declined successfully' });
+    } catch (error) {
+        console.error('declineBid Error:', error);
+        res.status(500).json({ message: 'Server error declining bid' });
+    }
+};
+
+// @desc    Remove a bid
+// @route   DELETE /api/bids/:id/remove
+const removeBid = async (req, res) => {
+    try {
+        const bid_id = req.params.id;
+        const user_id = req.user.id;
+
+        const bidCheck = await db.query('SELECT bidder_id FROM bids WHERE id = $1', [bid_id]);
+
+        if (bidCheck.rows.length === 0) {
+            return res.status(404).json({ message: 'Bid not found' });
+        }
+
+        if (bidCheck.rows[0].bidder_id !== user_id) {
+            return res.status(403).json({ message: 'Not authorized to remove this bid' });
+        }
+
+        await db.query('DELETE FROM bids WHERE id = $1', [bid_id]);
+
+        res.json({ message: 'Bid removed successfully' });
+    } catch (error) {
+        console.error('removeBid Error:', error);
+        res.status(500).json({ message: 'Server error removing bid' });
+    }
+};
+
 module.exports = {
     placeBid,
     getAuctionBids,
-    getUserBids
+    getUserBids,
+    acceptBid,
+    declineBid,
+    removeBid
 };

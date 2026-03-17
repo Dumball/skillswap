@@ -49,6 +49,9 @@ const apiService = {
     // Bids
     getBidsForAuction: (auctionId) => api.get(`/bids/auction/${auctionId}`),
     placeBid: (data) => api.post('/bids/place', data),
+    acceptBid: (id) => api.put(`/bids/${id}/accept`),
+    declineBid: (id) => api.put(`/bids/${id}/decline`),
+    removeBid: (id) => api.delete(`/bids/${id}/remove`),
 
     // Users
     getUserProfile: (id) => api.get(`/users/profile/${id}`),
@@ -74,6 +77,9 @@ const apiService = {
 
     // Activity
     getActivity: () => api.get('/activity'),
+
+    // Chat
+    getChatHistory: (transactionId) => api.get(`/chat/${transactionId}`),
 
     // Admin
     getAdminDashboard: () => api.get('/admin/dashboard'),

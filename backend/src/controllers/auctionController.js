@@ -174,8 +174,8 @@ const getUserDashboardData = async (req, res) => {
                         u_winner.name as winner_name, u_creator.name as creator_name
                  FROM transactions t
                  JOIN auctions a ON t.auction_id = a.id
-                 JOIN users u_winner ON t.winner_id = u_winner.id
-                 JOIN users u_creator ON t.creator_id = u_creator.id
+                 LEFT JOIN users u_winner ON t.winner_id = u_winner.id
+                 LEFT JOIN users u_creator ON t.creator_id = u_creator.id
                  WHERE t.creator_id = $1 OR t.winner_id = $1
                  ORDER BY t.created_at DESC
                  LIMIT 5`,

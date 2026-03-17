@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { AuthContext } from "../../context/AuthContext";
 import { io } from 'socket.io-client';
+import apiService from '../../services/api';
 
 const TransactionChat = ({ transactionId, otherUserName, onClose }) => {
     const { user } = useContext(AuthContext);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [socket, setSocket] = useState(null);
+    const [historyLoading, setHistoryLoading] = useState(true);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -14,6 +16,26 @@ const TransactionChat = ({ transactionId, otherUserName, onClose }) => {
     };
 
     useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const res = await apiService.getChatHistory(transactionId);
+                const formattedMessages = res.data.map(m => ({
+                    transactionId: m.transaction_id,
+                    senderId: m.sender_id,
+                    senderName: m.sender_name,
+                    text: m.text,
+                    timestamp: m.created_at
+                }));
+                setMessages(formattedMessages);
+            } catch (err) {
+                console.error("Failed to fetch chat history:", err);
+            } finally {
+                setHistoryLoading(false);
+            }
+        };
+
+        fetchHistory();
+
         const socketUrl = window.location.origin.replace('5173', '5000') || 'http://localhost:5000';
         const newSocket = io(`${socketUrl}/chat`, {
             path: '/socket.io',
@@ -87,11 +109,13 @@ const TransactionChat = ({ transactionId, otherUserName, onClose }) => {
             </div>
 
             <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {messages.length === 0 && (
+                {historyLoading ? (
+                    <div style={{ color: '#A0A4B8', textAlign: 'center', marginTop: '100px', fontSize: '14px' }}>Loading conversation...</div>
+                ) : messages.length === 0 ? (
                     <div style={{ color: '#A0A4B8', textAlign: 'center', marginTop: '100px', fontSize: '14px' }}>
                         Connected! Start discussing your skill swap.
                     </div>
-                )}
+                ) : null}
                 {messages.map((msg, idx) => (
                     <div key={idx} style={{
                         alignSelf: msg.senderId === user.id ? 'flex-end' : 'flex-start',

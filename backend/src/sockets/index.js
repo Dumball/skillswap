@@ -1,4 +1,5 @@
 const socketIo = require('socket.io');
+const db = require('../config/db');
 
 const initSockets = (server) => {
     // Setup socket.io with CORS for the frontend port
@@ -76,15 +77,26 @@ const initSockets = (server) => {
             console.log(`Client ${socket.id} joined chat room chat_${transactionId}`);
         });
 
-        socket.on('sendMessage', (data) => {
+        socket.on('sendMessage', async (data) => {
             const { transactionId, senderId, senderName, text, timestamp } = data;
-            // Broadcast to others in the same chat room
-            socket.to(`chat_${transactionId}`).emit('message', {
-                senderId,
-                senderName,
-                text,
-                timestamp
-            });
+            
+            try {
+                // Save message to database
+                await db.query(
+                    'INSERT INTO messages (transaction_id, sender_id, text, created_at) VALUES ($1, $2, $3, $4)',
+                    [transactionId, senderId, text, timestamp]
+                );
+
+                // Broadcast to others in the same chat room
+                socket.to(`chat_${transactionId}`).emit('message', {
+                    senderId,
+                    senderName,
+                    text,
+                    timestamp
+                });
+            } catch (err) {
+                console.error('Error saving chat message:', err);
+            }
         });
 
         socket.on('disconnect', () => {

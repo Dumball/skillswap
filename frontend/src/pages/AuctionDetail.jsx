@@ -82,15 +82,39 @@ const AuctionDetail = () => {
     };
 
     const handleAcceptBid = async (bidId) => {
-        if (!window.confirm("Are you sure you want to accept this bid and close the auction?")) return;
+        if (!window.confirm("Are you sure you want to accept this bid? This will close the auction and decline all other offers.")) return;
         try {
-            await apiService.createTransaction({
-                auction_id: auctionId,
-                bid_id: bidId
-            });
-            if (onNavigate) onNavigate('dashboard');
+            await apiService.acceptBid(bidId);
+            // Refresh data
+            const [auctionRes, bidsRes] = await Promise.all([
+                apiService.getAuctionById(auctionId),
+                apiService.getBidsForAuction(auctionId)
+            ]);
+            setAuction(auctionRes.data);
+            setBids(bidsRes.data);
+            alert("Bid accepted! Auction is now completed.");
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to accept bid');
+        }
+    };
+
+    const handleDeclineBid = async (bidId) => {
+        if (!window.confirm("Are you sure you want to decline this offer?")) return;
+        try {
+            await apiService.declineBid(bidId);
+            setBids(prev => prev.map(b => b.id === bidId ? { ...b, status: 'declined' } : b));
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to decline bid');
+        }
+    };
+
+    const handleRemoveBid = async (bidId) => {
+        if (!window.confirm("Are you sure you want to remove your bid?")) return;
+        try {
+            await apiService.removeBid(bidId);
+            setBids(prev => prev.filter(b => b.id !== bidId));
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to remove bid');
         }
     };
 
@@ -201,14 +225,46 @@ const AuctionDetail = () => {
                                                     <div className="bidder-name">{bidder.bidder_name || 'User'}</div>
                                                     <div className="reputation">⭐ {bidder.bidder_reputation || '0.0'}</div>
                                                 </div>
-                                                {user && user.id === auction.creator_id && auction.status === 'active' && (
+                                                {user && user.id === auction.creator_id && auction.status === 'active' && bidder.status !== 'declined' && (
+                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                        <button 
+                                                            onClick={() => handleAcceptBid(bidder.id)}
+                                                            className="btn" 
+                                                            style={{padding: '6px 12px', fontSize: '11px', background: 'var(--neon-blue)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
+                                                        >
+                                                            Accept
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDeclineBid(bidder.id)}
+                                                            className="btn" 
+                                                            style={{padding: '6px 12px', fontSize: '11px', background: 'rgba(255, 77, 77, 0.2)', color: '#ff4d4d', border: '1px solid #ff4d4d', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
+                                                        >
+                                                            Decline
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {user && user.id === bidder.bidder_id && auction.status === 'active' && (
                                                     <button 
-                                                        onClick={() => handleAcceptBid(bidder.id)}
+                                                        onClick={() => handleRemoveBid(bidder.id)}
                                                         className="btn" 
-                                                        style={{padding: '8px 16px', fontSize: '12px', background: 'var(--neon-blue)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600}}
+                                                        style={{padding: '6px 12px', fontSize: '11px', background: 'rgba(160, 164, 184, 0.1)', color: '#A0A4B8', border: '1px solid #A0A4B8', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
                                                     >
-                                                        Accept Offer
+                                                        Remove
                                                     </button>
+                                                )}
+                                                {bidder.status !== 'pending' && (
+                                                    <span style={{ 
+                                                        padding: '4px 8px', 
+                                                        borderRadius: '4px', 
+                                                        fontSize: '10px', 
+                                                        fontWeight: 700, 
+                                                        textTransform: 'uppercase',
+                                                        background: bidder.status === 'accepted' ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 77, 77, 0.1)',
+                                                        color: bidder.status === 'accepted' ? '#00ff9d' : '#ff4d4d',
+                                                        border: `1px solid ${bidder.status === 'accepted' ? '#00ff9d' : '#ff4d4d'}`
+                                                    }}>
+                                                        {bidder.status}
+                                                    </span>
                                                 )}
                                             </div>
                                             <div className="bid-offer" style={{ color: '#E0E4F0' }}>{bidder.description}</div>
