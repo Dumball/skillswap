@@ -9,11 +9,11 @@ from typing import Optional
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama3-70b-8192"
+GROQ_MODEL = "llama3-8b-8192"
 
 def call_groq(user_prompt: str, system_prompt: str = "You are a helpful AI assistant.", temperature: float = 0.7) -> dict:
     """
-    Call Groq API for text generation
+    Call Groq API for text generation with proper debugging
     
     Args:
         user_prompt: The user prompt
@@ -24,6 +24,7 @@ def call_groq(user_prompt: str, system_prompt: str = "You are a helpful AI assis
         Dictionary with status and content/error
     """
     if not GROQ_API_KEY:
+        print("[ERROR] GROQ_API_KEY environment variable not set")
         return {"error": "GROQ_API_KEY environment variable not set", "status": 500}
     
     headers = {
@@ -46,8 +47,15 @@ def call_groq(user_prompt: str, system_prompt: str = "You are a helpful AI assis
         "temperature": temperature
     }
     
+    print(f"[GROQ] Calling {GROQ_MODEL} with URL: {GROQ_API_URL}")
+    print(f"[GROQ] Headers: {headers.get('Authorization', 'NO_KEY')[:20]}...")
+    print(f"[GROQ] Data model: {data.get('model')}")
+    
     try:
         response = requests.post(GROQ_API_URL, headers=headers, json=data, timeout=30)
+        
+        print(f"[GROQ] Status Code: {response.status_code}")
+        print(f"[GROQ] Response: {response.text[:500]}")
         
         if response.status_code != 200:
             error_detail = response.text
@@ -56,16 +64,21 @@ def call_groq(user_prompt: str, system_prompt: str = "You are a helpful AI assis
                 error_detail = error_json.get("error", {}).get("message", error_detail)
             except:
                 pass
+            print(f"[ERROR] Groq API failed: {error_detail}")
             return {"error": f"Groq API error ({response.status_code}): {error_detail}", "status": response.status_code}
         
         result = response.json()
         content = result["choices"][0]["message"]["content"]
+        print(f"[GROQ] Success: Got response ({len(content)} chars)")
         return {"content": content, "status": 200}
     except requests.exceptions.Timeout:
+        print("[ERROR] Groq API timeout (30s exceeded)")
         return {"error": "Groq API timeout (30s exceeded)", "status": 504}
     except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Request failed: {str(e)}")
         return {"error": f"Request failed: {str(e)}", "status": 500}
     except (KeyError, IndexError) as e:
+        print(f"[ERROR] Invalid response format from Groq: {str(e)}")
         return {"error": f"Invalid response format from Groq: {str(e)}", "status": 502}
 
 

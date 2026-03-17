@@ -122,6 +122,52 @@ async def generate_test(request: SkillTestRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/generate-test")
+async def generate_test_get(skill: str = None, difficulty: str = "medium"):
+    """GET endpoint for generating test questions - with query parameters"""
+    if not skill or not skill.strip():
+        raise HTTPException(status_code=400, detail="Skill parameter is required and cannot be empty")
+    
+    print(f"\n[TEST] Generating test for skill: {skill}, difficulty: {difficulty}")
+    
+    test_data = generate_skill_test_questions(skill.strip(), difficulty)
+    
+    if "error" in test_data:
+        print(f"[TEST] Error: {test_data['error']}")
+        raise HTTPException(status_code=500, detail=test_data["error"])
+    
+    print(f"[TEST] Success: Generated questions for {skill}")
+    return {
+        "skill_name": skill,
+        "difficulty": difficulty,
+        "questions": test_data.get("questions", []),
+        "status": "success"
+    }
+
+
+@app.get("/debug/groq")
+async def debug_groq():
+    """Debug endpoint to test Groq API connectivity"""
+    print("\n[DEBUG] Testing Groq API...")
+    
+    from ai_service import call_groq
+    
+    result = call_groq(
+        user_prompt="Generate 1 simple multiple-choice question about Python with options A, B, C, D and answer A. Return only JSON.",
+        system_prompt="You generate multiple-choice questions. Always respond with valid JSON only.",
+        temperature=0.5
+    )
+    
+    print(f"[DEBUG] Result: {result}")
+    
+    return {
+        "status": "debug_test",
+        "result": result,
+        "groq_api_key_set": bool(os.getenv("GROQ_API_KEY")),
+        "groq_model": "llama3-8b-8192"
+    }
+
+
 @app.post("/agents/learning-path", response_model=LearningPathResponse)
 @limiter.limit("3/minute")
 async def learning_path(request: LearningPathRequest, req: Request):
