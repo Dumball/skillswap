@@ -19,6 +19,7 @@ import Architecture from './pages/Architecture';
 import LearningPath from './components/ai/LearningPath';
 import SkillVerifier from './components/ai/SkillVerifier';
 import ChatPanel from './components/ai/ChatPanel';
+import SkillTestPage from './pages/SkillTestPage';
 
 function App() {
     const [activePage, setActivePage] = useState('home');
@@ -54,6 +55,8 @@ function App() {
                 return <LearningPath onNavigate={handleNavigate} />;
             case 'skill-verifier':
                 return <SkillVerifier onNavigate={handleNavigate} />;
+            case 'skill-test':
+                return <SkillTestPage onNavigate={handleNavigate} />;
             default:
                 return <Home onNavigate={handleNavigate} />;
         }

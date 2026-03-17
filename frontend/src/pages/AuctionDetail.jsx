@@ -72,6 +72,7 @@ const AuctionDetail = () => {
                 description: bidDescription
             });
             
+            console.log('Bid placed successfully:', res.data.bid);
             setBids(prev => [res.data.bid, ...prev]);
             setBidAmount('');
             setBidDescription('');

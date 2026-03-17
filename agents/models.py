@@ -43,6 +43,41 @@ class SkillVerifyResponse(BaseModel):
     agent: str = "skill_verifier"
 
 
+class SkillTestRequest(BaseModel):
+    skill_name: str
+    difficulty: Optional[str] = "medium"
+
+
+class Question(BaseModel):
+    id: int
+    type: str # mcq
+    question: str
+    options: List[str]
+    correct_answer: str
+    explanation: str
+
+
+class PracticalQuestion(BaseModel):
+    id: int
+    type: str # practical
+    question: str
+    requirements: Optional[List[str]] = []
+    hints: Optional[List[str]] = []
+
+
+class SubTest(BaseModel):
+    skill: str
+    difficulty: str
+    questions: List[dict] # Use dict to allow mix of MCQ and Practical in the same list
+
+
+class SkillTestResponse(BaseModel):
+    success: bool
+    test: Optional[SubTest] = None
+    questions: Optional[List[dict]] = []  # Keep for backward compatibility
+    agent: str = "skill_verifier"
+
+
 class LearningPathRequest(BaseModel):
     target_skill: str
     current_skills: Optional[List[str]] = []

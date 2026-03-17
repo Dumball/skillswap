@@ -69,7 +69,7 @@ router.post('/verify-skill', async (req, res) => {
         const response = await fetch(`${AGENT_SERVICE_URL}/agents/verify-skill`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ skill_name, user_id, user_answer }),
+            body: JSON.stringify({ skill_name, user_id: String(user_id), user_answer }),
         });
 
         const data = await response.json();

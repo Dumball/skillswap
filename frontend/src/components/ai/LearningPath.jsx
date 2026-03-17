@@ -6,6 +6,12 @@ const LearningPath = ({ onNavigate }) => {
     const [path, setPath] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [message, setMessage] = useState(null); // { text, type: 'error' | 'success' }
+
+    const showNotification = (text, type = 'error') => {
+        setMessage({ text, type });
+        setTimeout(() => setMessage(null), 5000);
+    };
 
     const generatePath = async () => {
         if (!targetSkill.trim()) return;
@@ -44,6 +50,24 @@ const LearningPath = ({ onNavigate }) => {
                     <h2>🗺️ AI Learning Path Generator</h2>
                     <p>Get a personalized skill roadmap powered by our AI and skill knowledge graph</p>
                 </div>
+
+                {message && (
+                    <div style={{
+                        padding: '16px 24px',
+                        borderRadius: '16px',
+                        background: message.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                        border: message.type === 'error' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
+                        color: message.type === 'error' ? '#ef4444' : '#22c55e',
+                        marginBottom: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        animation: 'fadeIn 0.3s ease'
+                    }}>
+                        <span>{message.type === 'error' ? '⚠️' : '✅'}</span>
+                        {message.text}
+                    </div>
+                )}
 
                 <div style={{
                     background: 'var(--card-bg)', border: '1px solid var(--card-border)',
@@ -101,7 +125,7 @@ const LearningPath = ({ onNavigate }) => {
                                     onClick={() => {
                                         const text = path.path.map(s => `Stage ${s.stage}: ${s.title}\nDuration: ${s.duration}\nTopics: ${s.topics.join(', ')}\nTip: ${s.skill_swap_tip}\n`).join('\n---\n\n');
                                         navigator.clipboard.writeText(text);
-                                        alert('Roadmap copied to clipboard!');
+                                        showNotification('Roadmap copied to clipboard!', 'success');
                                     }}
                                     style={{
                                         padding: '4px 12px', fontSize: '11px', borderRadius: '15px',

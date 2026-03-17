@@ -5,7 +5,7 @@ const { hashPassword, comparePassword, generateToken } = require('../utils/auth'
 // @route   POST /api/auth/register
 const registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        let { name, email, password, auto_suffix } = req.body;
 
         // Validation
         if (!name || !email || !password) {
@@ -14,8 +14,27 @@ const registerUser = async (req, res) => {
 
         // Check if user exists
         const userExists = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        
         if (userExists.rows.length > 0) {
-            return res.status(400).json({ message: 'User already exists' });
+            // Development Mode Enhancement: Auto-suffix
+            if (process.env.NODE_ENV === 'development' && auto_suffix) {
+                let suffix = 1;
+                let baseEmail = email.split('@')[0];
+                let domain = email.split('@')[1];
+                let newEmail = `${baseEmail}+${suffix}@${domain}`;
+                
+                while ((await db.query('SELECT * FROM users WHERE email = $1', [newEmail])).rows.length > 0) {
+                    suffix++;
+                    newEmail = `${baseEmail}+${suffix}@${domain}`;
+                }
+                email = newEmail;
+            } else {
+                return res.status(409).json({ 
+                    success: false,
+                    error: "EMAIL_EXISTS",
+                    message: 'This email is already registered. Please login or use a different email.' 
+                });
+            }
         }
 
         // Hash password
@@ -31,12 +50,21 @@ const registerUser = async (req, res) => {
         const token = generateToken(user.id);
 
         res.status(201).json({
+            success: true,
             message: 'User registered successfully',
             user,
             token
         });
     } catch (error) {
         console.error('Registration Error:', error);
+        // Handle postgres unique constraint error just in case
+        if (error.code === '23505') {
+            return res.status(409).json({ 
+                success: false,
+                error: "EMAIL_EXISTS",
+                message: 'This email is already registered.' 
+            });
+        }
         res.status(500).json({ message: 'Server error during registration' });
     }
 };

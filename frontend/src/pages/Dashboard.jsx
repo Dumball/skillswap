@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import apiService from '../services/api';
-import { AuthContext } from '../context/AuthContext';
+import useAuth from '../hooks/useAuth';
 import { io } from 'socket.io-client';
 import SkillVerifier from '../components/ai/SkillVerifier';
 import TransactionChat from '../components/ai/TransactionChat';
@@ -30,7 +30,7 @@ const AnimatedCounter = ({ end, duration }) => {
 };
 
 const Dashboard = ({ onNavigate }) => {
-    const { user } = useContext(AuthContext);
+    const { user, loading: authLoading } = useAuth();
     const [stats, setStats] = useState({ skill_credits: 0, total_exchanges: 0, average_rating: 0 });
     const [dashboardData, setDashboardData] = useState({ activeAuctions: [], recentExchanges: [] });
     const [skills, setSkills] = useState([]);
@@ -44,7 +44,14 @@ const Dashboard = ({ onNavigate }) => {
     const [adding, setAdding] = useState(false);
     const [activity, setActivity] = useState([]);
     const [activeChat, setActiveChat] = useState(null); // { id, otherName }
-    const [loading, setLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(true);
+    const [message, setMessage] = useState(null); // { text, type: 'error' | 'success' }
+    const [confirmingDelete, setConfirmingDelete] = useState(null); // skillId
+
+    const showNotification = (text, type = 'error') => {
+        setMessage({ text, type });
+        setTimeout(() => setMessage(null), 5000);
+    };
 
     const fetchAllData = async () => {
         try {
@@ -61,9 +68,17 @@ const Dashboard = ({ onNavigate }) => {
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
         } finally {
-            setLoading(false);
+            setDataLoading(false);
         }
     };
+
+    // Redirect Effect
+    useEffect(() => {
+        if (!authLoading && !user) {
+            const timer = setTimeout(() => onNavigate('login'), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [authLoading, user, onNavigate]);
 
     useEffect(() => {
         if (user) {
@@ -95,13 +110,14 @@ const Dashboard = ({ onNavigate }) => {
     }, [user]);
 
     const handleRemoveSkill = async (skillId) => {
-        if (!window.confirm("Are you sure you want to remove this skill?")) return;
         try {
             await apiService.removeSkill(skillId);
+            setConfirmingDelete(null);
             fetchAllData();
+            showNotification("Skill removed successfully", "success");
         } catch (err) {
             console.error("Error removing skill:", err);
-            alert("Failed to remove skill. Please try again.");
+            showNotification("Failed to remove skill. Please try again.");
         }
     };
 
@@ -119,18 +135,75 @@ const Dashboard = ({ onNavigate }) => {
             await fetchAllData(); 
         } catch (err) {
             console.error("Error adding skill:", err);
-            alert("Error adding skill. Check if backend is running.");
+            showNotification("Error adding skill. Check if backend is running.");
         } finally {
             setAdding(false);
         }
     };
 
-    if (loading) return <div className="page active" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><h2>Loading Dashboard...</h2></div>;
+    // Multi-state UI Handling
+    if (authLoading) {
+        return (
+            <div className="page active" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+                <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--neon-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
+                <h2 style={{ color: 'var(--text-secondary)' }}>Verifying your identity...</h2>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="page active" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', textAlign: 'center' }}>
+                <div style={{ fontSize: '64px', marginBottom: '24px' }}>🔒</div>
+                <h2 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '16px' }}>Access Restricted</h2>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', maxWidth: '400px' }}>
+                    You are not logged in. Please log in to access your skills, swaps, and dashboard.
+                </p>
+                <button className="btn btn-primary" onClick={() => onNavigate('login')} style={{ padding: '12px 32px' }}>
+                    Go to Login
+                </button>
+                <p style={{ marginTop: '24px', fontSize: '14px', color: 'rgba(255,255,255,0.3)' }}>Redirecting to login shortly...</p>
+            </div>
+        );
+    }
+
+    if (dataLoading) {
+        return (
+            <div className="page active" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+                <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--neon-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
+                <h2 style={{ color: 'var(--text-secondary)' }}>Loading your dashboard...</h2>
+            </div>
+        );
+    }
 
     const initials = user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
 
     return (
         <div className="page active" style={{ display: 'block', opacity: 1, animation: 'none' }}>
+            {/* Global Notification Banner */}
+            {message && (
+                <div style={{
+                    position: 'fixed',
+                    top: '100px',
+                    right: '40px',
+                    zIndex: 2000,
+                    padding: '16px 24px',
+                    borderRadius: '12px',
+                    background: message.type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(34, 197, 94, 0.9)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                    animation: 'slideInRight 0.3s ease'
+                }}>
+                    <span>{message.type === 'error' ? '⚠️' : '✅'}</span>
+                    {message.text}
+                </div>
+            )}
+
             <section className="section">
                 <h1 style={{ fontSize: '48px', fontWeight: 800, marginBottom: '40px' }}>Your Dashboard</h1>
                 
@@ -251,13 +324,32 @@ const Dashboard = ({ onNavigate }) => {
                                                     <span style={{ fontWeight: 600 }}>{skill.skill_name}</span>
                                                     <span style={{ fontSize: '12px', color: '#22c55e', background: 'rgba(34, 197, 94, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>✓ Verified</span>
                                                 </div>
-                                                <button 
-                                                    onClick={() => handleRemoveSkill(skill.id)}
-                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '18px', opacity: 0.7 }}
-                                                    title="Remove Skill"
-                                                >
-                                                    🗑️
-                                                </button>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    {confirmingDelete === skill.id ? (
+                                                        <>
+                                                            <button 
+                                                                onClick={() => handleRemoveSkill(skill.id)}
+                                                                style={{ padding: '4px 12px', background: '#ef4444', border: 'none', borderRadius: '6px', color: 'white', fontSize: '11px', cursor: 'pointer' }}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setConfirmingDelete(null)}
+                                                                style={{ padding: '4px 12px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', fontSize: '11px', cursor: 'pointer' }}
+                                                            >
+                                                                Back
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => setConfirmingDelete(skill.id)}
+                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '18px', opacity: 0.7 }}
+                                                            title="Remove Skill"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -279,13 +371,30 @@ const Dashboard = ({ onNavigate }) => {
                                                     <span style={{ fontWeight: 600, fontSize: '16px' }}>{skill.skill_name}</span>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                         <span style={{ color: '#A0A4B8', fontSize: '12px', padding: '4px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}>{skill.skill_category}</span>
-                                                        <button 
-                                                            onClick={() => handleRemoveSkill(skill.id)}
-                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '16px', opacity: 0.6 }}
-                                                            title="Remove Skill"
-                                                        >
-                                                            🗑️
-                                                        </button>
+                                                        {confirmingDelete === skill.id ? (
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button 
+                                                                    onClick={() => handleRemoveSkill(skill.id)}
+                                                                    style={{ padding: '4px 8px', background: '#ef4444', border: 'none', borderRadius: '6px', color: 'white', fontSize: '10px', cursor: 'pointer' }}
+                                                                >
+                                                                    Confirm
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => setConfirmingDelete(null)}
+                                                                    style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', fontSize: '10px', cursor: 'pointer' }}
+                                                                >
+                                                                    No
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <button 
+                                                                onClick={() => setConfirmingDelete(skill.id)}
+                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '16px', opacity: 0.6 }}
+                                                                title="Remove Skill"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <SkillVerifier skillName={skill.skill_name} userId={user.id} onVerified={fetchAllData} />
@@ -324,6 +433,13 @@ const Dashboard = ({ onNavigate }) => {
                                 onClick={() => onNavigate('learning-path')}
                             >
                                 🗺️ View My Learning Path
+                            </button>
+                            <button 
+                                className="btn btn-secondary" 
+                                style={{ width: '100%', justifyContent: 'center', height: '50px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)', color: '#fbbf24' }}
+                                onClick={() => onNavigate('skill-test')}
+                            >
+                                🏆 Verify My Skills
                             </button>
                         </div>
                     </div>
@@ -390,17 +506,32 @@ const Dashboard = ({ onNavigate }) => {
                 
                 <div className="activity-feed">
                     <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Recent Activity</h3>
-                    {activity.length > 0 ? activity.map((item, index) => (
-                        <div key={index} className="activity-item">
-                            <div className="activity-icon">{item.type === 'bid' ? '🎯' : '✅'}</div>
-                            <div className="activity-content">
-                                <div className="activity-title">
-                                    {item.type === 'bid' ? `New bid on "${item.auction_title}"` : `Exchange for "${item.auction_title}" updated to ${item.value}`}
+                    {activity.length > 0 ? activity.map((item, index) => {
+                        const timeAgo = (dateStr) => {
+                            const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+                            if (diff < 60) return `${diff}s ago`;
+                            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                            return `${Math.floor(diff / 86400)}d ago`;
+                        };
+
+                        const icon = item.type === 'bid_placed' ? '➡️' : item.type === 'bid_received' ? '📥' : '🔁';
+                        const label = item.type === 'bid_placed'
+                            ? <><strong>You bid</strong> on &quot;{item.auction_title}&quot; — {item.credit_value} credits for <em>{item.skill_offered}</em> (to {item.other_user_name})</>
+                            : item.type === 'bid_received'
+                            ? <><strong>{item.other_user_name}</strong> bid on your &quot;{item.auction_title}&quot; — {item.credit_value} credits for <em>{item.skill_offered}</em></>
+                            : <>Exchange for &quot;{item.auction_title}&quot; with <strong>{item.other_user_name}</strong> — <span style={{ color: item.status === 'completed' ? '#22c55e' : '#fbbf24' }}>{item.status}</span></>;
+
+                        return (
+                            <div key={index} className="activity-item">
+                                <div className="activity-icon">{icon}</div>
+                                <div className="activity-content">
+                                    <div className="activity-title" style={{ lineHeight: 1.5 }}>{label}</div>
+                                    <div className="activity-time">{timeAgo(item.created_at)}</div>
                                 </div>
-                                <div className="activity-time">{new Date(item.created_at).toLocaleString()}</div>
                             </div>
-                        </div>
-                    )) : (
+                        );
+                    }) : (
                         <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>No recent activity.</div>
                     )}
                 </div>

@@ -83,6 +83,14 @@ class AgentOrchestrator:
         )
         return {**result, "agent": "skill_verifier"}
 
+    async def run_skill_test_generator(self, skill_name: str, difficulty: str = "medium") -> dict:
+        """Generate a structured multi-question test"""
+        result = await self.skill_verifier.generate_test(
+            skill_name=skill_name,
+            difficulty=difficulty
+        )
+        return {**result, "agent": "skill_verifier"}
+
     async def run_learning_path(self, target_skill: str, current_skills: List[str]) -> dict:
         """Generate a learning roadmap"""
         result = await self.learning_path_agent.run(

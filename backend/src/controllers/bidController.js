@@ -44,7 +44,20 @@ const placeBid = async (req, res) => {
                  WHERE auction_id = $4 AND bidder_id = $5 RETURNING *`,
                 [skill_offered, credit_value, description, auction_id, bidder_id]
             );
-            return res.status(200).json({ message: 'Bid updated successfully', bid: updatedBid.rows[0] });
+
+            // Fetch enriched bid data for frontend
+            const enrichedBid = await db.query(
+                `SELECT b.*, u.name as bidder_name, u.avatar_url as bidder_avatar, u.reputation_score as bidder_reputation 
+                 FROM bids b
+                 JOIN users u ON b.bidder_id = u.id
+                 WHERE b.id = $1`,
+                [updatedBid.rows[0].id]
+            );
+
+            return res.status(200).json({ 
+                message: 'Bid updated successfully', 
+                bid: enrichedBid.rows[0] 
+            });
         }
 
         const newBid = await db.query(
@@ -53,9 +66,18 @@ const placeBid = async (req, res) => {
             [auction_id, bidder_id, skill_offered, credit_value, description]
         );
 
+        // Fetch enriched bid data for frontend
+        const enrichedBid = await db.query(
+            `SELECT b.*, u.name as bidder_name, u.avatar_url as bidder_avatar, u.reputation_score as bidder_reputation 
+             FROM bids b
+             JOIN users u ON b.bidder_id = u.id
+             WHERE b.id = $1`,
+            [newBid.rows[0].id]
+        );
+
         res.status(201).json({
             message: 'Bid placed successfully',
-            bid: newBid.rows[0]
+            bid: enrichedBid.rows[0]
         });
     } catch (error) {
         console.error('placeBid Error:', error);

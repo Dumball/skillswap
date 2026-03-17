@@ -22,7 +22,6 @@ const Navigation = ({ activePage, onNavigate }) => {
         { id: 'home', label: 'Home' },
         { id: 'marketplace', label: 'Marketplace' },
         { id: 'dashboard', label: 'Dashboard' },
-        { id: 'profile', label: 'Profile' },
         { id: 'create-auction', label: 'Create Auction' },
         { id: 'learning-path', label: '🗺️ Learning Path' },
     ];
@@ -34,7 +33,7 @@ const Navigation = ({ activePage, onNavigate }) => {
                     className="logo" 
                     onClick={() => onNavigate('home')}
                 >
-                    SkillSwap
+                    <img src="/logo.png" alt="SkillSwap" style={{ height: '48px', objectFit: 'contain' }} />
                 </div>
                 <div className="nav-links">
                     {navItems.map(item => (

@@ -20,6 +20,19 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// Intercept responses to handle global errors (like 401 Unauthorized)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            console.error("Unauthorized! Logging out...");
+            localStorage.removeItem('token');
+            window.location.href = '/login'; 
+        }
+        return Promise.reject(error);
+    }
+);
+
 // Generic API wrapper
 const apiService = {
     // Auth
@@ -44,6 +57,7 @@ const apiService = {
     getUserStats: () => api.get('/users/stats'),
     addSkill: (data) => api.post('/users/add-skill', data),
     removeSkill: (id) => api.delete(`/users/remove-skill/${id}`),
+    generateSkillTest: (data) => api.post('/skills/generate-test', data),
 
     // Agents
     verifySkill: (data) => api.post('/agents/verify-skill', data),
@@ -60,6 +74,21 @@ const apiService = {
 
     // Activity
     getActivity: () => api.get('/activity'),
+
+    // Admin
+    getAdminDashboard: () => api.get('/admin/dashboard'),
+    getAdminUsers: () => api.get('/admin/users'),
+    banAdminUser: (id) => api.put(`/admin/ban-user/${id}`),
+    unbanAdminUser: (id) => api.put(`/admin/unban-user/${id}`),
+    getAdminPendingSkills: () => api.get('/admin/skills/pending'),
+    verifyAdminSkill: (id) => api.put(`/admin/skills/verify/${id}`),
+    rejectAdminSkill: (id) => api.put(`/admin/skills/reject/${id}`),
+    getAdminAuctions: () => api.get('/admin/auctions'),
+    closeAdminAuction: (id) => api.put(`/admin/auctions/close/${id}`),
+    deleteAdminAuction: (id) => api.delete(`/admin/auctions/${id}`),
+    getAdminBids: () => api.get('/admin/bids'),
+    getAdminTransactions: () => api.get('/admin/transactions'),
+    resolveAdminDispute: (id) => api.put(`/admin/transactions/resolve/${id}`),
 };
 
 export default apiService;
