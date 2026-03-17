@@ -66,12 +66,22 @@ app.get('/health', (req, res) => {
 
 // Error Handling Middleware Boilerplate
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('[ERROR]', err.stack);
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 5000;
 
+console.log('\n' + '='.repeat(50));
+console.log('🚀 SkillSwap Backend Server Starting...');
+console.log('='.repeat(50));
+console.log('📌 Environment:', process.env.NODE_ENV || 'development');
+console.log('📌 Port:', PORT);
+console.log('📌 Frontend URL:', process.env.FRONTEND_URL || 'any origin');
+console.log('='.repeat(50) + '\n');
+
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`📝 Register: POST http://localhost:${PORT}/api/auth/register`);
 });
