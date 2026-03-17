@@ -80,8 +80,12 @@ async def chat(request: ChatRequest, req: Request):
 async def explain_auction(request: AuctionExplainRequest):
     """Auction Explainer Agent - explains what a specific auction is asking for"""
     try:
-        explanation = generate_auction_explanation(request.question)
-        return AuctionExplainResponse(explanation=explanation, auction_id=request.auction_id)
+        result = generate_auction_explanation(request.question)
+        if "error" in result:
+            raise HTTPException(status_code=500, detail=result["error"])
+        return AuctionExplainResponse(explanation=result.get("explanation", ""), auction_id=request.auction_id)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -105,11 +109,15 @@ async def generate_test(request: SkillTestRequest):
     """Skill Verification Agent - generates a structured multi-question test"""
     try:
         test_data = generate_skill_test_questions(request.skill_name, request.difficulty or "medium")
+        if "error" in test_data:
+            raise HTTPException(status_code=500, detail=test_data["error"])
         return SkillTestResponse(
             skill_name=request.skill_name,
             difficulty=request.difficulty or "medium",
             questions=test_data.get("questions", [])
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -120,12 +128,16 @@ async def learning_path(request: LearningPathRequest, req: Request):
     """Learning Path Agent - personalized skill roadmaps"""
     try:
         path_data = generate_learning_path(request.target_skill, "beginner")
+        if "error" in path_data:
+            raise HTTPException(status_code=500, detail=path_data["error"])
         return LearningPathResponse(
             path=path_data.get("steps", []),
             target_skill=request.target_skill,
             cached=False,
             agent="learning_path"
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

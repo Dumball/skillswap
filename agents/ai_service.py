@@ -9,21 +9,22 @@ from typing import Optional
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama3-70b-8192"
 
-def call_groq(prompt: str, model: str = "llama-3.1-70b-versatile", temperature: float = 0.7) -> str:
+def call_groq(user_prompt: str, system_prompt: str = "You are a helpful AI assistant.", temperature: float = 0.7) -> dict:
     """
     Call Groq API for text generation
     
     Args:
-        prompt: The user prompt
-        model: Model to use (llama-3.1-70b-versatile by default)
+        user_prompt: The user prompt
+        system_prompt: System prompt for context
         temperature: Temperature for generation (0.0-1.0)
     
     Returns:
-        Generated text response
+        Dictionary with status and content/error
     """
     if not GROQ_API_KEY:
-        raise ValueError("GROQ_API_KEY environment variable not set")
+        return {"error": "GROQ_API_KEY environment variable not set", "status": 500}
     
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -31,22 +32,41 @@ def call_groq(prompt: str, model: str = "llama-3.1-70b-versatile", temperature: 
     }
     
     data = {
-        "model": model,
+        "model": GROQ_MODEL,
         "messages": [
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user",
+                "content": user_prompt
+            }
         ],
-        "temperature": temperature,
-        "max_tokens": 2048
+        "temperature": temperature
     }
     
     try:
         response = requests.post(GROQ_API_URL, headers=headers, json=data, timeout=30)
-        response.raise_for_status()
+        
+        if response.status_code != 200:
+            error_detail = response.text
+            try:
+                error_json = response.json()
+                error_detail = error_json.get("error", {}).get("message", error_detail)
+            except:
+                pass
+            return {"error": f"Groq API error ({response.status_code}): {error_detail}", "status": response.status_code}
         
         result = response.json()
-        return result["choices"][0]["message"]["content"]
+        content = result["choices"][0]["message"]["content"]
+        return {"content": content, "status": 200}
+    except requests.exceptions.Timeout:
+        return {"error": "Groq API timeout (30s exceeded)", "status": 504}
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Groq API error: {str(e)}")
+        return {"error": f"Request failed: {str(e)}", "status": 500}
+    except (KeyError, IndexError) as e:
+        return {"error": f"Invalid response format from Groq: {str(e)}", "status": 502}
 
 
 def generate_skill_test_questions(skill: str, difficulty: str = "medium") -> dict:
@@ -60,41 +80,44 @@ def generate_skill_test_questions(skill: str, difficulty: str = "medium") -> dic
     Returns:
         Dictionary with questions and answers
     """
-    prompt = f"""Generate 5 high-quality multiple-choice questions for the skill '{skill}' at {difficulty} difficulty level.
+    system_prompt = "You are a helpful AI that generates high-quality skill assessment questions. Always respond with valid JSON only, no markdown or extra text."
+    
+    user_prompt = f"""Generate 5 multiple-choice questions with 4 options each and correct answers for the skill: {skill} at {difficulty} difficulty level.
 
-Format your response as valid JSON (no markdown, just raw JSON) with this structure:
+Return ONLY valid JSON (no markdown, no extra text) in this exact format:
 {{
     "skill": "{skill}",
     "difficulty": "{difficulty}",
     "questions": [
         {{
             "id": 1,
-            "question": "Question text?",
+            "question": "Question text here?",
             "options": ["A) Option 1", "B) Option 2", "C) Option 3", "D) Option 4"],
             "correct_answer": "A",
             "explanation": "Why this is correct"
         }}
     ]
-}}
-
-Only return the JSON, no additional text."""
+}}"""
+    
+    result = call_groq(user_prompt, system_prompt, temperature=0.5)
+    
+    if result["status"] != 200:
+        return {"error": result.get("error", "Unknown error"), "skill": skill, "difficulty": difficulty}
     
     try:
-        response_text = call_groq(prompt, temperature=0.5)
-        # Try to parse JSON response
+        response_text = result["content"]
         data = json.loads(response_text)
         return data
     except json.JSONDecodeError:
-        # If JSON parsing fails, return structured error
         return {
+            "error": "Failed to parse JSON response from AI",
             "skill": skill,
             "difficulty": difficulty,
-            "error": "Failed to parse AI response",
             "raw_response": response_text
         }
 
 
-def generate_auction_explanation(auction_type: str) -> str:
+def generate_auction_explanation(auction_type: str) -> dict:
     """
     Generate an explanation of an auction type using Groq
     
@@ -102,12 +125,19 @@ def generate_auction_explanation(auction_type: str) -> str:
         auction_type: Type of auction to explain
     
     Returns:
-        Explanation text
+        Dictionary with explanation
     """
-    prompt = f"""Explain the '{auction_type}' auction type in the context of a skill exchange marketplace in 2-3 sentences. 
+    system_prompt = "You are an expert in skill exchange marketplace auctions. Provide clear, concise explanations."
+    
+    user_prompt = f"""Explain the '{auction_type}' auction type in the context of a skill exchange marketplace in 2-3 sentences. 
 Keep it concise and practical."""
     
-    return call_groq(prompt, temperature=0.6)
+    result = call_groq(user_prompt, system_prompt, temperature=0.6)
+    
+    if result["status"] != 200:
+        return {"error": result.get("error", "Unknown error"), "auction_type": auction_type}
+    
+    return {"explanation": result["content"], "auction_type": auction_type}
 
 
 def verify_skill_with_ai(skill_name: str, description: str) -> dict:
@@ -121,31 +151,43 @@ def verify_skill_with_ai(skill_name: str, description: str) -> dict:
     Returns:
         Verification result with assessment
     """
-    prompt = f"""As a skill verification expert, assess this skill submission:
+    system_prompt = "You are a skill verification expert. Assess skills for a marketplace and respond with valid JSON only."
+    
+    user_prompt = f"""As a skill verification expert, assess this skill submission:
 
 Skill: {skill_name}
 Description: {description}
 
-Provide a brief assessment (2 sentences) on whether this is a valid, well-described skill for an exchange marketplace.
+Provide a brief assessment on whether this is a valid, well-described skill for an exchange marketplace.
 
-Response format (JSON):
+Respond with ONLY valid JSON (no markdown or extra text):
 {{
-    "is_valid": true/false,
-    "confidence": 0.0-1.0,
+    "is_valid": true or false,
+    "confidence": 0.0 to 1.0,
     "assessment": "Your assessment here",
     "category": "suggested category"
 }}"""
     
-    try:
-        response_text = call_groq(prompt, temperature=0.3)
-        data = json.loads(response_text)
-        return data
-    except (json.JSONDecodeError, Exception) as e:
+    result = call_groq(user_prompt, system_prompt, temperature=0.3)
+    
+    if result["status"] != 200:
         return {
             "is_valid": True,
             "confidence": 0.5,
             "assessment": "Could not verify with AI, manual review suggested",
-            "error": str(e)
+            "error": result.get("error", "Unknown error")
+        }
+    
+    try:
+        response_text = result["content"]
+        data = json.loads(response_text)
+        return data
+    except json.JSONDecodeError:
+        return {
+            "is_valid": True,
+            "confidence": 0.5,
+            "assessment": "Skill appears valid but could not fully assess",
+            "error": "Failed to parse AI response"
         }
 
 
@@ -160,9 +202,11 @@ def generate_learning_path(skill: str, user_level: str = "beginner") -> dict:
     Returns:
         Learning path with steps
     """
-    prompt = f"""Create a 5-step learning path for someone at {user_level} level learning '{skill}'.
+    system_prompt = "You are an expert learning path designer. Create structured, actionable learning plans. Respond with valid JSON only."
+    
+    user_prompt = f"""Create a 5-step learning path for someone at {user_level} level learning '{skill}'.
 
-Format as JSON:
+Respond with ONLY valid JSON (no markdown or extra text):
 {{
     "skill": "{skill}",
     "user_level": "{user_level}",
@@ -177,14 +221,23 @@ Format as JSON:
     ]
 }}"""
     
+    result = call_groq(user_prompt, system_prompt, temperature=0.5)
+    
+    if result["status"] != 200:
+        return {
+            "skill": skill,
+            "user_level": user_level,
+            "error": result.get("error", "Unknown error")
+        }
+    
     try:
-        response_text = call_groq(prompt, temperature=0.5)
+        response_text = result["content"]
         data = json.loads(response_text)
         return data
     except json.JSONDecodeError:
         return {
             "skill": skill,
             "user_level": user_level,
-            "error": "Failed to generate learning path",
+            "error": "Failed to parse learning path response",
             "raw_response": response_text
         }
