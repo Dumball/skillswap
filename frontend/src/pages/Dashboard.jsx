@@ -47,6 +47,15 @@ const Dashboard = ({ onNavigate }) => {
     const [dataLoading, setDataLoading] = useState(true);
     const [message, setMessage] = useState(null); // { text, type: 'error' | 'success' }
     const [confirmingDelete, setConfirmingDelete] = useState(null); // skillId
+    const [activeTab, setActiveTab] = useState('overview');
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('tab') === 'verify-skill') {
+            setActiveTab('verify-skill');
+            // Clean up the URL for a cleaner UX after routing if desired, but we can leave it to maintain history context
+        }
+    }, []);
 
     const showNotification = (text, type = 'error') => {
         setMessage({ text, type });
@@ -145,7 +154,7 @@ const Dashboard = ({ onNavigate }) => {
     if (authLoading) {
         return (
             <div className="page active" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-                <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--neon-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
+                <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
                 <h2 style={{ color: 'var(--text-secondary)' }}>Verifying your identity...</h2>
             </div>
         );
@@ -170,7 +179,7 @@ const Dashboard = ({ onNavigate }) => {
     if (dataLoading) {
         return (
             <div className="page active" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-                <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--neon-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
+                <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '16px' }}></div>
                 <h2 style={{ color: 'var(--text-secondary)' }}>Loading your dashboard...</h2>
             </div>
         );
@@ -246,17 +255,13 @@ const Dashboard = ({ onNavigate }) => {
                             <button 
                                 className="btn btn-primary" 
                                 onClick={() => setShowAddSkill(true)}
-                                style={{ 
-                                    boxShadow: '0 0 15px rgba(91, 124, 255, 0.4)',
-                                    animation: 'pulse 2s infinite'
-                                }}
                             >
                                 ✨ Add New Skill
                             </button>
                         </div>
 
                         {showAddSkill && (
-                            <div className="auction-detail-card" style={{ marginBottom: '32px', border: '1px solid var(--neon-blue)', padding: '24px', background: 'rgba(0, 209, 255, 0.05)' }}>
+                            <div className="auction-detail-card" style={{ marginBottom: '32px', padding: '24px', position: 'relative' }}>
                                 <h4 style={{ marginBottom: '20px' }}>What are you good at?</h4>
                                 <form onSubmit={handleAddSkill}>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
@@ -305,7 +310,7 @@ const Dashboard = ({ onNavigate }) => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                             {/* Verified Skills */}
                             <div className="verified-skills-list">
-                                <h4 style={{ fontSize: '16px', color: 'var(--neon-blue)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <h4 style={{ fontSize: '16px', color: 'var(--primary-blue)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span>🛡️</span> Verified Expertise ({skills.filter(s => s.verified).length})
                                 </h4>
                                 {skills.filter(s => s.verified).length > 0 ? (
@@ -429,7 +434,7 @@ const Dashboard = ({ onNavigate }) => {
                             </button>
                             <button 
                                 className="btn btn-secondary" 
-                                style={{ width: '100%', justifyContent: 'center', height: '50px', background: 'rgba(91, 124, 255, 0.05)', border: '1px solid rgba(91, 124, 255, 0.2)' }}
+                                style={{ width: '100%', justifyContent: 'center', height: '50px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
                                 onClick={() => onNavigate('learning-path')}
                             >
                                 🗺️ View My Learning Path
@@ -437,21 +442,6 @@ const Dashboard = ({ onNavigate }) => {
                             <button 
                                 className="btn btn-secondary" 
                                 style={{ width: '100%', justifyContent: 'center', height: '50px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)', color: '#fbbf24' }}
-                                onClick={() => onNavigate('skill-test')}
-                            >
-                                🏆 Verify My Skills
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px', marginBottom: '40px' }}>
-                    <div className="stats-card">
-                        <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Active Auctions ({dashboardData.activeAuctions.length})</h3>
-                        {dashboardData.activeAuctions.length > 0 ? dashboardData.activeAuctions.map(auction => (
-                            <div key={auction.id} className="auction-card" style={{ marginBottom: '16px' }}>
-                                <div className="auction-title">{auction.title}</div>
-                                <div className="auction-category">{auction.skill_category}</div>
                                 <div className="auction-stats">
                                     <div className="auction-stat">
                                         <div className="auction-stat-label">Bids</div>
@@ -476,14 +466,14 @@ const Dashboard = ({ onNavigate }) => {
                                 <div key={tx.id} className="auction-card" style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <div className="auction-title">{tx.title}</div>
-                                        <div className="auction-category">Swap with <span style={{ color: 'var(--neon-blue)' }}>{otherName}</span></div>
+                                        <div className="auction-category">Swap with <span style={{ color: 'var(--primary-blue)' }}>{otherName}</span></div>
                                         <div style={{ marginTop: '8px', color: 'var(--text-secondary)', fontSize: '13px' }}>
                                             Status: <span style={{ color: tx.status === 'completed' ? '#22c55e' : '#FFD700' }}>{tx.status}</span>
                                         </div>
                                     </div>
                                     <button 
                                         className="btn btn-primary" 
-                                        style={{ padding: '8px 16px', fontSize: '12px', background: 'rgba(0, 209, 255, 0.1)', border: '1px solid var(--neon-blue)', color: 'var(--neon-blue)' }}
+                                        style={{ padding: '8px 16px', fontSize: '12px', background: 'rgba(0, 209, 255, 0.1)', border: '1px solid var(--primary-blue)', color: 'var(--primary-blue)' }}
                                         onClick={() => setActiveChat({ id: tx.id, otherName })}
                                     >
                                         💬 Chat
@@ -504,37 +494,41 @@ const Dashboard = ({ onNavigate }) => {
                     />
                 )}
                 
-                <div className="activity-feed">
-                    <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Recent Activity</h3>
-                    {activity.length > 0 ? activity.map((item, index) => {
-                        const timeAgo = (dateStr) => {
-                            const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-                            if (diff < 60) return `${diff}s ago`;
-                            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-                            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-                            return `${Math.floor(diff / 86400)}d ago`;
-                        };
+                )}
+                
+                {activeTab === 'overview' && (
+                    <div className="activity-feed">
+                        <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Recent Activity</h3>
+                        {activity.length > 0 ? activity.map((item, index) => {
+                            const timeAgo = (dateStr) => {
+                                const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+                                if (diff < 60) return `${diff}s ago`;
+                                if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                                if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                                return `${Math.floor(diff / 86400)}d ago`;
+                            };
 
-                        const icon = item.type === 'bid_placed' ? '➡️' : item.type === 'bid_received' ? '📥' : '🔁';
-                        const label = item.type === 'bid_placed'
-                            ? <><strong>You bid</strong> on &quot;{item.auction_title}&quot; — {item.credit_value} credits for <em>{item.skill_offered}</em> (to {item.other_user_name})</>
-                            : item.type === 'bid_received'
-                            ? <><strong>{item.other_user_name}</strong> bid on your &quot;{item.auction_title}&quot; — {item.credit_value} credits for <em>{item.skill_offered}</em></>
-                            : <>Exchange for &quot;{item.auction_title}&quot; with <strong>{item.other_user_name}</strong> — <span style={{ color: item.status === 'completed' ? '#22c55e' : '#fbbf24' }}>{item.status}</span></>;
+                            const icon = item.type === 'bid_placed' ? '➡️' : item.type === 'bid_received' ? '📥' : '🔁';
+                            const label = item.type === 'bid_placed'
+                                ? <><strong>You bid</strong> on &quot;{item.auction_title}&quot; — {item.credit_value} credits for <em>{item.skill_offered}</em> (to {item.other_user_name})</>
+                                : item.type === 'bid_received'
+                                ? <><strong>{item.other_user_name}</strong> bid on your &quot;{item.auction_title}&quot; — {item.credit_value} credits for <em>{item.skill_offered}</em></>
+                                : <>Exchange for &quot;{item.auction_title}&quot; with <strong>{item.other_user_name}</strong> — <span style={{ color: item.status === 'completed' ? '#22c55e' : '#fbbf24' }}>{item.status}</span></>;
 
-                        return (
-                            <div key={index} className="activity-item">
-                                <div className="activity-icon">{icon}</div>
-                                <div className="activity-content">
-                                    <div className="activity-title" style={{ lineHeight: 1.5 }}>{label}</div>
-                                    <div className="activity-time">{timeAgo(item.created_at)}</div>
+                            return (
+                                <div key={index} className="activity-item">
+                                    <div className="activity-icon">{icon}</div>
+                                    <div className="activity-content">
+                                        <div className="activity-title" style={{ lineHeight: 1.5 }}>{label}</div>
+                                        <div className="activity-time">{timeAgo(item.created_at)}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    }) : (
-                        <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>No recent activity.</div>
-                    )}
-                </div>
+                            );
+                        }) : (
+                            <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>No recent activity.</div>
+                        )}
+                    </div>
+                )}
             </section>
         </div>
     );

@@ -87,7 +87,7 @@ const CreateAuction = ({ onNavigate }) => {
                             To maintain the quality of SkillSwap, you must have at least one verified skill before you can create an auction and request services from others.
                         </p>
                         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-                            <button className="btn btn-primary" onClick={() => onNavigate('skill-verifier')}>Verify a Skill Now</button>
+                            <button className="btn btn-primary" onClick={() => { window.history.pushState(null, '', '?tab=verify-skill'); onNavigate('dashboard'); }}>Verify a Skill Now</button>
                             <button className="btn btn-secondary" onClick={() => onNavigate('dashboard')}>Back to Dashboard</button>
                         </div>
                     </div>

@@ -134,7 +134,7 @@ const SkillVerifier = ({ skillName: initialSkillName, userId, onVerified }) => {
             {phase === 'loading' && (
                 <div style={{ textAlign: 'center', padding: '40px 0' }}>
                     <div className="spinner" style={{ margin: '0 auto 16px' }}></div>
-                    <div style={{ color: 'var(--neon-blue)', fontWeight: 600 }}>Crafting your test...</div>
+                    <div style={{ color: 'var(--primary-blue)', fontWeight: 600 }}>Crafting your test...</div>
                 </div>
             )}
 
@@ -145,7 +145,7 @@ const SkillVerifier = ({ skillName: initialSkillName, userId, onVerified }) => {
                             QUESTION {currentQuestionIndex + 1} OF {testData.length}
                         </span>
                         <div style={{ width: '100px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-                            <div style={{ width: `${progress}%`, height: '100%', background: 'var(--neon-blue)', borderRadius: '2px', transition: 'width 0.3s' }}></div>
+                            <div style={{ width: `${progress}%`, height: '100%', background: 'var(--primary-blue)', borderRadius: '2px', transition: 'width 0.3s' }}></div>
                         </div>
                     </div>
 
@@ -161,7 +161,7 @@ const SkillVerifier = ({ skillName: initialSkillName, userId, onVerified }) => {
                                     onClick={() => handleAnswerChange(option)}
                                     style={{
                                         textAlign: 'left', padding: '16px', borderRadius: '12px', border: '1px solid',
-                                        borderColor: answers[currentQuestionIndex] === option ? 'var(--neon-blue)' : 'rgba(255,255,255,0.1)',
+                                        borderColor: answers[currentQuestionIndex] === option ? 'var(--primary-blue)' : 'rgba(255,255,255,0.1)',
                                         background: answers[currentQuestionIndex] === option ? 'rgba(0,209,255,0.1)' : 'rgba(255,255,255,0.02)',
                                         color: 'white', cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px'
                                     }}
@@ -196,7 +196,7 @@ const SkillVerifier = ({ skillName: initialSkillName, userId, onVerified }) => {
             {phase === 'evaluating' && (
                 <div style={{ textAlign: 'center', padding: '40px 0' }}>
                     <div className="spinner" style={{ margin: '0 auto 16px' }}></div>
-                    <div style={{ color: 'var(--neon-blue)', fontWeight: 600 }}>Analyzing results...</div>
+                    <div style={{ color: 'var(--primary-blue)', fontWeight: 600 }}>Analyzing results...</div>
                 </div>
             )}
 

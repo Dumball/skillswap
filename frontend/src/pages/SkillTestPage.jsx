@@ -45,7 +45,7 @@ const SkillTestPage = ({ onNavigate }) => {
         return (
             <div className="page active" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
                 <div>
-                    <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--neon-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }}></div>
+                    <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-blue)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }}></div>
                     <p style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>Loading your skills...</p>
                 </div>
             </div>
@@ -67,7 +67,7 @@ const SkillTestPage = ({ onNavigate }) => {
                         🏆 Skill Verification Center
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '16px', maxWidth: '600px' }}>
-                        Take a test to verify your expertise. Score <strong style={{ color: 'var(--neon-blue)' }}>70% or above</strong> to get your skill verified and unlock the ability to create auctions.
+                        Take a test to verify your expertise. Score <strong style={{ color: 'var(--primary-blue)' }}>70% or above</strong> to get your skill verified and unlock the ability to create auctions.
                     </p>
                 </div>
 
@@ -203,8 +203,8 @@ const SkillTestPage = ({ onNavigate }) => {
                             )}
 
                             {/* Info Box */}
-                            <div style={{ marginTop: '32px', background: 'rgba(91, 124, 255, 0.05)', border: '1px solid rgba(91, 124, 255, 0.15)', borderRadius: '16px', padding: '24px' }}>
-                                <h4 style={{ fontWeight: 700, marginBottom: '12px', color: 'var(--neon-blue)' }}>ℹ️ How It Works</h4>
+                            <div style={{ marginTop: '32px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.15)', borderRadius: '16px', padding: '24px' }}>
+                                <h4 style={{ fontWeight: 700, marginBottom: '12px', color: 'var(--primary-blue)' }}>ℹ️ How It Works</h4>
                                 <ol style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.8, paddingLeft: '20px' }}>
                                     <li>Click <strong>"Take Test"</strong> on any unverified skill</li>
                                     <li>Answer 5 MCQs + 1 practical question</li>

@@ -60,6 +60,14 @@ router.post('/explain-auction', async (req, res) => {
 
 const db = require('../config/db');
 
+function calculateCredits(score) {
+    if (score === 100) return 100;
+    if (score >= 90) return 75;
+    if (score >= 80) return 50;
+    if (score >= 70) return 25;
+    return 0;
+}
+
 // POST /api/agents/verify-skill - Skill Verifier
 router.post('/verify-skill', async (req, res) => {
     const { skill_name, user_id, user_answer } = req.body;
@@ -82,18 +90,45 @@ router.post('/verify-skill', async (req, res) => {
         // Only process score threshold if it's an evaluation (user_answer exists)
         if (user_answer) {
             const trulyPassed = data.passed && data.score >= 70;
+            let earnedCredits = 0;
 
             if (trulyPassed) {
                 console.log(`User ${user_id} passed verification for ${skill_name} (${data.score}%)`);
+                
+                // First check if the skill was ALREADY verified to prevent duplicate rewards
+                const existingSkillRes = await db.query(
+                    'SELECT verified FROM skills WHERE user_id = $1 AND skill_name = $2',
+                    [user_id, skill_name]
+                );
+                
+                const wasAlreadyVerified = existingSkillRes.rows.length > 0 && existingSkillRes.rows[0].verified;
+
+                // Update skill record with new score and verified status
                 await db.query(
                     'UPDATE skills SET verified = true, verification_score = $1, last_verified_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND skill_name = $3',
                     [data.score, user_id, skill_name]
                 );
+                
+                // Only grant reward credits ONCE per skill verification
+                if (!wasAlreadyVerified) {
+                    earnedCredits = calculateCredits(data.score);
+                    if (earnedCredits > 0) {
+                        await db.query(
+                            'UPDATE users SET skill_credits = skill_credits + $1 WHERE id = $2',
+                            [earnedCredits, user_id]
+                        );
+                        console.log(`Granted ${earnedCredits} credits to user ${user_id} for scoring ${data.score}`);
+                    }
+                }
             }
 
             return res.json({
                 ...data,
                 passed: trulyPassed,
+                success: true,
+                score: data.score,
+                credits_earned: earnedCredits,
+                message: trulyPassed ? "Credits awarded successfully" : "Score too low for verification",
                 threshold_info: trulyPassed ? null : (data.score > 0 ? "You need a score of 70 or higher to be verified." : null)
             });
         }

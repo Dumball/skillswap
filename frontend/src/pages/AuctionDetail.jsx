@@ -10,6 +10,7 @@ const AuctionDetail = () => {
     const [auction, setAuction] = useState(null);
     const [bids, setBids] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [confirmConfig, setConfirmConfig] = useState({ show: false, message: '', onConfirm: null });
     
     // Bid form state
     const [bidAmount, setBidAmount] = useState('');
@@ -81,41 +82,55 @@ const AuctionDetail = () => {
         }
     };
 
-    const handleAcceptBid = async (bidId) => {
-        if (!window.confirm("Are you sure you want to accept this bid? This will close the auction and decline all other offers.")) return;
-        try {
-            await apiService.acceptBid(bidId);
-            // Refresh data
-            const [auctionRes, bidsRes] = await Promise.all([
-                apiService.getAuctionById(auctionId),
-                apiService.getBidsForAuction(auctionId)
-            ]);
-            setAuction(auctionRes.data);
-            setBids(bidsRes.data);
-            alert("Bid accepted! Auction is now completed.");
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to accept bid');
-        }
+    const handleAcceptBid = (bidId) => {
+        setConfirmConfig({
+            show: true,
+            message: "Are you sure you want to accept this bid? This will close the auction and decline all other offers.",
+            onConfirm: async () => {
+                try {
+                    await apiService.acceptBid(bidId);
+                    // Refresh data
+                    const [auctionRes, bidsRes] = await Promise.all([
+                        apiService.getAuctionById(auctionId),
+                        apiService.getBidsForAuction(auctionId)
+                    ]);
+                    setAuction(auctionRes.data);
+                    setBids(bidsRes.data);
+                } catch (err) {
+                    setError(err.response?.data?.message || 'Failed to accept bid');
+                }
+            }
+        });
     };
 
-    const handleDeclineBid = async (bidId) => {
-        if (!window.confirm("Are you sure you want to decline this offer?")) return;
-        try {
-            await apiService.declineBid(bidId);
-            setBids(prev => prev.map(b => b.id === bidId ? { ...b, status: 'declined' } : b));
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to decline bid');
-        }
+    const handleDeclineBid = (bidId) => {
+        setConfirmConfig({
+            show: true,
+            message: "Are you sure you want to decline this offer?",
+            onConfirm: async () => {
+                try {
+                    await apiService.declineBid(bidId);
+                    setBids(prev => prev.map(b => b.id === bidId ? { ...b, status: 'declined' } : b));
+                } catch (err) {
+                    setError(err.response?.data?.message || 'Failed to decline bid');
+                }
+            }
+        });
     };
 
-    const handleRemoveBid = async (bidId) => {
-        if (!window.confirm("Are you sure you want to remove your bid?")) return;
-        try {
-            await apiService.removeBid(bidId);
-            setBids(prev => prev.filter(b => b.id !== bidId));
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to remove bid');
-        }
+    const handleRemoveBid = (bidId) => {
+        setConfirmConfig({
+            show: true,
+            message: "Are you sure you want to remove your bid?",
+            onConfirm: async () => {
+                try {
+                    await apiService.removeBid(bidId);
+                    setBids(prev => prev.filter(b => b.id !== bidId));
+                } catch (err) {
+                    setError(err.response?.data?.message || 'Failed to remove bid');
+                }
+            }
+        });
     };
 
     const calculateTimeLeft = (endTime) => {
@@ -230,14 +245,14 @@ const AuctionDetail = () => {
                                                         <button 
                                                             onClick={() => handleAcceptBid(bidder.id)}
                                                             className="btn" 
-                                                            style={{padding: '6px 12px', fontSize: '11px', background: 'var(--neon-blue)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
+                                                            style={{padding: '6px 12px', fontSize: '11px', background: 'var(--primary-blue)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
                                                         >
                                                             Accept
                                                         </button>
                                                         <button 
                                                             onClick={() => handleDeclineBid(bidder.id)}
                                                             className="btn" 
-                                                            style={{padding: '6px 12px', fontSize: '11px', background: 'rgba(255, 77, 77, 0.2)', color: '#ff4d4d', border: '1px solid #ff4d4d', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
+                                                            style={{padding: '6px 12px', fontSize: '11px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444', borderRadius: '4px', cursor: 'pointer', fontWeight: 500}}
                                                         >
                                                             Decline
                                                         </button>
@@ -259,16 +274,16 @@ const AuctionDetail = () => {
                                                         fontSize: '10px', 
                                                         fontWeight: 700, 
                                                         textTransform: 'uppercase',
-                                                        background: bidder.status === 'accepted' ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 77, 77, 0.1)',
-                                                        color: bidder.status === 'accepted' ? '#00ff9d' : '#ff4d4d',
-                                                        border: `1px solid ${bidder.status === 'accepted' ? '#00ff9d' : '#ff4d4d'}`
+                                                        background: bidder.status === 'accepted' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                        color: bidder.status === 'accepted' ? '#22c55e' : '#ef4444',
+                                                        border: `1px solid ${bidder.status === 'accepted' ? '#22c55e' : '#ef4444'}`
                                                     }}>
                                                         {bidder.status}
                                                     </span>
                                                 )}
                                             </div>
                                             <div className="bid-offer" style={{ color: '#E0E4F0' }}>{bidder.description}</div>
-                                            <div className="bid-credits" style={{ color: 'var(--neon-blue)', fontWeight: 600 }}>Value: {bidder.credit_value} Effort</div>
+                                            <div className="bid-credits" style={{ color: 'var(--primary-blue)', fontWeight: 600 }}>Value: {bidder.credit_value} Effort</div>
                                         </div>
                                     );
                                 })}
@@ -277,6 +292,31 @@ const AuctionDetail = () => {
                     </div>
                 </div>
             </section>
+            
+            {confirmConfig.show && (
+                <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', zIndex: 50 }}>
+                    <div style={{ background: '#111827', padding: '24px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', width: '100%', maxWidth: '400px' }}>
+                        <p style={{ color: 'white', marginBottom: '16px' }}>{confirmConfig.message}</p>
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setConfirmConfig({ show: false, message: '', onConfirm: null })}
+                                style={{ padding: '8px 16px', color: '#9CA3AF', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    confirmConfig.onConfirm();
+                                    setConfirmConfig({ show: false, message: '', onConfirm: null });
+                                }}
+                                style={{ padding: '8px 16px', background: '#3B82F6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

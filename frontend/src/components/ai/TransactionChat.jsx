@@ -85,7 +85,7 @@ const TransactionChat = ({ transactionId, otherUserName, onClose }) => {
             width: '380px',
             height: '500px',
             background: '#0F111A',
-            border: '1px solid var(--neon-blue)',
+            border: '1px solid var(--primary-blue)',
             borderRadius: '20px',
             display: 'flex',
             flexDirection: 'column',
@@ -123,7 +123,7 @@ const TransactionChat = ({ transactionId, otherUserName, onClose }) => {
                     }}>
                         <div style={{
                             padding: '10px 14px',
-                            background: msg.senderId === user.id ? 'var(--neon-blue)' : 'rgba(255,255,255,0.05)',
+                            background: msg.senderId === user.id ? 'var(--primary-blue)' : 'rgba(255,255,255,0.05)',
                             borderRadius: msg.senderId === user.id ? '14px 14px 0 14px' : '0 14px 14px 14px',
                             fontSize: '14px'
                         }}>
@@ -155,7 +155,7 @@ const TransactionChat = ({ transactionId, otherUserName, onClose }) => {
                         }}
                     />
                     <button type="submit" style={{
-                        background: 'var(--neon-blue)',
+                        background: 'var(--primary-blue)',
                         border: 'none',
                         color: 'white',
                         padding: '0 16px',

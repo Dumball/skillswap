@@ -70,7 +70,7 @@ const Navigation = ({ activePage, onNavigate }) => {
                                 className={`nav-cta ${activePage === 'login' ? 'active' : ''}`}
                                 onClick={(e) => { e.preventDefault(); onNavigate('login'); }}
                                 href="#login"
-                                style={{ background: 'transparent', border: '1px solid var(--neon-blue)' }}
+                                style={{ background: 'transparent', border: '1px solid var(--card-border)', color: 'var(--text-primary)', boxShadow: 'none' }}
                             >
                                 Login
                             </a>

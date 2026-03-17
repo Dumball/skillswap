@@ -109,7 +109,7 @@ const Profile = ({ onNavigate }) => {
 
                 // Draw data
                 const gradient = radarCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(maxRadius, 1));
-                gradient.addColorStop(0, 'rgba(91, 124, 255, 0.4)');
+                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
                 gradient.addColorStop(1, 'rgba(122, 92, 255, 0.2)');
                 radarCtx.fillStyle = gradient;
                 radarCtx.strokeStyle = '#5B7CFF';
@@ -186,7 +186,7 @@ const Profile = ({ onNavigate }) => {
                         <div className="reputation" style={{ justifyContent: 'center', fontSize: '18px', marginBottom: '24px' }}>
                             ⭐ {user.reputation_score || '0.00'} Reputation
                         </div>
-                        <div style={{ padding: '24px', background: 'rgba(91, 124, 255, 0.1)', borderRadius: '12px', border: '1px solid rgba(91, 124, 255, 0.2)', marginBottom: '24px' }}>
+                        <div style={{ padding: '24px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)', marginBottom: '24px' }}>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: '#FFFFFF', marginBottom: '8px' }}>Active Member</div>
                             <div style={{ color: '#A0A4B8', fontSize: '14px' }}>Role: {user.role || 'User'}</div>
                         </div>
@@ -213,7 +213,7 @@ const Profile = ({ onNavigate }) => {
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '32px' }}>
                         {skills.filter(s => s.verified).length > 0 ? skills.filter(s => s.verified).map(skill => (
-                            <div key={skill.id} style={{ width: '100%', marginBottom: '16px', padding: '20px', background: 'rgba(0, 209, 255, 0.05)', borderRadius: '16px', border: '1px solid var(--neon-blue)' }}>
+                            <div key={skill.id} style={{ width: '100%', marginBottom: '16px', padding: '20px', background: 'rgba(0, 209, 255, 0.05)', borderRadius: '16px', border: '1px solid var(--primary-blue)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ fontSize: '18px', fontWeight: 600 }}>{skill.skill_name}</div>
@@ -225,7 +225,7 @@ const Profile = ({ onNavigate }) => {
                             </div>
                         )) : (
                             <div style={{ color: 'var(--text-secondary)', width: '100%', textAlign: 'center', padding: '20px' }}>
-                                No verified skills yet. Head to the <span style={{ color: 'var(--neon-blue)', cursor: 'pointer' }} onClick={() => onNavigate('dashboard')}>Dashboard</span> to verify your expertise!
+                                No verified skills yet. Head to the <span style={{ color: 'var(--primary-blue)', cursor: 'pointer' }} onClick={() => onNavigate('dashboard')}>Dashboard</span> to verify your expertise!
                             </div>
                         )}
                     </div>

@@ -6,17 +6,17 @@
         }
 
         :root {
-            --deep-black: #0B0B0F;
-            --dark-slate: #121318;
-            --neon-blue: #5B7CFF;
-            --purple-start: #7A5CFF;
-            --purple-end: #5B7CFF;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A0A4B8;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --glow-blue: rgba(91, 124, 255, 0.4);
-            --glow-purple: rgba(122, 92, 255, 0.4);
+            --deep-black: #0B0F17;
+            --dark-slate: #111827;
+            --secondary-blue: #60A5FA;
+            --primary-blue: #3B82F6;
+            --hover-blue: #2563EB;
+            --active-blue: #1D4ED8;
+            --text-primary: #E5E7EB;
+            --text-secondary: #9CA3AF;
+            --card-bg: #1A2233;
+            --card-border: rgba(255, 255, 255, 0.08);
+            --glow-blue: rgba(59, 130, 246, 0.15); /* Reduced glow */
         }
 
         body {
@@ -57,9 +57,9 @@
         }
 
         .nav-container {
-            max-width: 1280px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px 40px;
+            padding: 24px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -68,7 +68,7 @@
         .logo {
             font-size: 24px;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -97,16 +97,18 @@
 
         .nav-cta {
             padding: 10px 24px;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
-            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            border-radius: 12px;
             color: white !important;
-            font-weight: 600;
-            transition: all 0.24s ease;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 10px var(--glow-blue);
         }
 
         .nav-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px var(--glow-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px var(--glow-blue);
+            filter: brightness(1.1);
         }
 
         /* Page Container */
@@ -151,14 +153,11 @@
 
         .hero h1 {
             font-size: 72px;
-            font-weight: 900;
+            font-weight: 800;
             line-height: 1.1;
             margin-bottom: 24px;
-            background: linear-gradient(135deg, #FFFFFF, var(--neon-blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
             letter-spacing: -2px;
+            color: var(--text-primary);
         }
 
         .hero-subtitle {
@@ -176,44 +175,46 @@
         }
 
         .btn {
-            padding: 16px 32px;
+            padding: 14px 28px;
             border-radius: 12px;
-            font-weight: 600;
-            font-size: 16px;
+            font-weight: 500;
+            font-size: 15px;
             border: none;
             cursor: pointer;
-            transition: all 0.24s ease;
+            transition: all 0.2s ease;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         @keyframes pulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(91, 124, 255, 0.4); }
-    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(91, 124, 255, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(91, 124, 255, 0); }
-}
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.2); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
 
-.btn-primary {
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             color: white;
-            box-shadow: 0 10px 30px var(--glow-blue);
+            box-shadow: 0 4px 12px var(--glow-blue);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px var(--glow-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px var(--glow-blue);
+            filter: brightness(1.1);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
+            background: transparent;
+            color: var(--text-primary);
             border: 1px solid var(--card-border);
-            backdrop-filter: blur(10px);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.03);
+            transform: translateY(-1px);
         }
 
         /* 3D Marketplace Visualization */
@@ -232,9 +233,9 @@
             width: 120px;
             height: 120px;
             transform: translate(-50%, -50%);
-            background: radial-gradient(circle, var(--neon-blue), var(--purple-start));
+            background: radial-gradient(circle, var(--primary-blue), var(--secondary-blue));
             border-radius: 50%;
-            box-shadow: 0 0 60px var(--glow-blue), 0 0 100px var(--glow-purple);
+            box-shadow: 0 0 60px var(--glow-blue), 0 0 100px var(--glow-blue);
             animation: pulseHub 3s ease-in-out infinite;
         }
 
@@ -258,7 +259,7 @@
 
         .skill-card-3d:hover {
             transform: translateZ(20px) scale(1.05);
-            border-color: var(--neon-blue);
+            border-color: var(--primary-blue);
             box-shadow: 0 10px 40px var(--glow-blue);
         }
 
@@ -266,7 +267,7 @@
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: var(--neon-blue);
+            color: var(--primary-blue);
         }
 
         .skill-card-3d p {
@@ -277,7 +278,7 @@
         .connection-line {
             position: absolute;
             height: 2px;
-            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+            background: linear-gradient(90deg, transparent, var(--primary-blue), transparent);
             transform-origin: left center;
             pointer-events: none;
             opacity: 0.3;
@@ -334,15 +335,15 @@
         }
 
         .problem-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--neon-blue);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
         }
 
         .problem-icon {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -380,7 +381,7 @@
             padding: 32px;
             background: var(--card-bg);
             backdrop-filter: blur(20px);
-            border: 2px solid var(--neon-blue);
+            border: 2px solid var(--primary-blue);
             border-radius: 16px;
             box-shadow: 0 0 40px var(--glow-blue);
             text-align: center;
@@ -389,7 +390,7 @@
 
         .request-card-center h3 {
             font-size: 20px;
-            color: var(--neon-blue);
+            color: var(--primary-blue);
             margin-bottom: 8px;
         }
 
@@ -413,12 +414,12 @@
 
         .bid-card:hover {
             transform: translateZ(20px) scale(1.05);
-            border-color: var(--purple-start);
+            border-color: var(--secondary-blue);
         }
 
         .bid-card.selected {
-            border: 2px solid var(--purple-start);
-            box-shadow: 0 0 40px var(--glow-purple);
+            border: 2px solid var(--secondary-blue);
+            box-shadow: 0 0 40px var(--glow-blue);
             animation: glowPulse 2s ease-in-out infinite;
         }
 
@@ -434,15 +435,15 @@
         }
 
         @keyframes glowPulse {
-            0%, 100% { box-shadow: 0 0 40px var(--glow-purple); }
-            50% { box-shadow: 0 0 60px var(--glow-purple); }
+            0%, 100% { box-shadow: 0 0 40px var(--glow-blue); }
+            50% { box-shadow: 0 0 60px var(--glow-blue); }
         }
 
         .bid-card h4 {
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: var(--purple-start);
+            color: var(--secondary-blue);
         }
 
         .bid-card p {
@@ -468,14 +469,14 @@
         }
 
         .step-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--neon-blue);
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .step-number {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -503,20 +504,19 @@
         }
 
         .auction-card {
-            padding: 28px;
+            padding: 24px;
             background: var(--card-bg);
-            backdrop-filter: blur(20px);
             border: 1px solid var(--card-border);
             border-radius: 16px;
-            transition: all 0.24s ease;
-            transform-style: preserve-3d;
+            transition: all 0.2s ease;
             cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .auction-card:hover {
-            transform: translateY(-10px) rotateX(2deg);
-            border-color: var(--neon-blue);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
         }
 
         .auction-header {
@@ -534,12 +534,12 @@
 
         .auction-category {
             display: inline-block;
-            padding: 4px 12px;
-            background: rgba(91, 124, 255, 0.2);
-            border: 1px solid var(--neon-blue);
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
             border-radius: 6px;
             font-size: 11px;
-            color: var(--neon-blue);
+            color: var(--text-secondary);
             margin-bottom: 16px;
         }
 
@@ -564,13 +564,13 @@
         .auction-stat-value {
             font-size: 16px;
             font-weight: 700;
-            color: var(--neon-blue);
+            color: var(--primary-blue);
         }
 
         .countdown-timer {
             font-size: 14px;
             font-weight: 600;
-            color: var(--purple-start);
+            color: var(--secondary-blue);
         }
 
         .reputation {
@@ -609,9 +609,9 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             border-radius: 50%;
-            box-shadow: 0 0 40px var(--glow-blue), inset 0 0 20px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 20px var(--glow-blue), inset 0 0 10px rgba(255, 255, 255, 0.1);
         }
 
         @keyframes rotateToken {
@@ -628,7 +628,7 @@
         .token-value {
             font-size: 24px;
             font-weight: 800;
-            color: var(--neon-blue);
+            color: var(--primary-blue);
         }
 
         /* Network Visualization */
@@ -648,12 +648,12 @@
             padding: 24px;
             background: rgba(18, 19, 24, 0.95);
             backdrop-filter: blur(30px);
-            border: 1px solid var(--neon-blue);
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.24s ease;
+            transition: opacity 0.2s ease;
             z-index: 100;
         }
 
@@ -664,7 +664,7 @@
         .user-avatar {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             border-radius: 50%;
             margin-bottom: 16px;
             display: flex;
@@ -684,10 +684,10 @@
         .skill-tag {
             padding: 4px 10px;
             background: rgba(91, 124, 255, 0.2);
-            border: 1px solid var(--neon-blue);
+            border: 1px solid var(--primary-blue);
             border-radius: 6px;
             font-size: 11px;
-            color: var(--neon-blue);
+            color: var(--primary-blue);
         }
 
         /* Marketplace Page */
@@ -720,8 +720,8 @@
 
         .search-input:focus {
             outline: none;
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 20px var(--glow-blue);
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px var(--glow-blue);
         }
 
         .filter-select {
@@ -732,11 +732,11 @@
             color: white;
             font-size: 14px;
             cursor: pointer;
-            transition: all 0.24s ease;
+            transition: all 0.2s ease;
         }
 
         .filter-select:hover {
-            border-color: var(--neon-blue);
+            border-color: var(--primary-blue);
         }
 
         /* Dashboard */
@@ -759,7 +759,7 @@
         .profile-avatar {
             width: 120px;
             height: 120px;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             border-radius: 50%;
             margin: 0 auto 20px;
             display: flex;
@@ -805,7 +805,7 @@
         .stat-value {
             font-size: 36px;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -840,7 +840,7 @@
         .activity-icon {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -910,7 +910,7 @@
         }
 
         .bid-item:hover {
-            border-color: var(--neon-blue);
+            border-color: var(--primary-blue);
             transform: translateX(4px);
         }
 
@@ -924,7 +924,7 @@
         .bidder-avatar {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -947,7 +947,7 @@
         .bid-credits {
             font-size: 16px;
             font-weight: 700;
-            color: var(--neon-blue);
+            color: var(--primary-blue);
         }
 
         /* Profile Page */
@@ -977,8 +977,8 @@
         }
 
         .skill-item:hover {
-            transform: translateY(-4px);
-            border-color: var(--neon-blue);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.15);
         }
 
         .skill-item h4 {
@@ -996,7 +996,7 @@
 
         .skill-level-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--neon-blue), var(--purple-start));
+            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
             border-radius: 3px;
             transition: width 0.6s ease;
         }
@@ -1149,12 +1149,12 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: var(--neon-blue);
+            background: var(--primary-blue);
             border-radius: 5px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--purple-start);
+            background: var(--secondary-blue);
         }
 
         /* Loading Animation */
@@ -1163,7 +1163,7 @@
             width: 20px;
             height: 20px;
             border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: var(--neon-blue);
+            border-top-color: var(--primary-blue);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -1185,13 +1185,13 @@
             transform: translateX(-50%);
             padding: 8px 12px;
             background: rgba(18, 19, 24, 0.95);
-            border: 1px solid var(--neon-blue);
+            border: 1px solid var(--card-border);
             border-radius: 6px;
             font-size: 12px;
             white-space: nowrap;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.24s ease;
+            transition: opacity 0.2s ease;
         }
 
         .tooltip:hover::after {

@@ -182,15 +182,15 @@ const Home = ({ onNavigate }) => {
                 draw() {
                     const pulse = Math.sin(this.pulsePhase) * 0.3 + 0.7;
                     const gradient = networkCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 3);
-                    gradient.addColorStop(0, `rgba(91, 124, 255, ${0.4 * pulse})`);
-                    gradient.addColorStop(1, 'rgba(91, 124, 255, 0)');
+                    gradient.addColorStop(0, `rgba(99, 102, 241, ${0.2 * pulse})`);
+                    gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
                     
                     networkCtx.fillStyle = gradient;
                     networkCtx.beginPath();
                     networkCtx.arc(this.x, this.y, this.radius * 3, 0, Math.PI * 2);
                     networkCtx.fill();
                     
-                    networkCtx.fillStyle = '#5B7CFF';
+                    networkCtx.fillStyle = '#6366F1';
                     networkCtx.beginPath();
                     networkCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                     networkCtx.fill();
@@ -211,8 +211,8 @@ const Home = ({ onNavigate }) => {
                     nodes.slice(i + 1).forEach(otherNode => {
                         const dist = Math.sqrt((node.x - otherNode.x) ** 2 + (node.y - otherNode.y) ** 2);
                         if (dist < 150) {
-                            const opacity = (1 - dist / 150) * 0.2;
-                            networkCtx.strokeStyle = `rgba(91, 124, 255, ${opacity})`;
+                            const opacity = (1 - dist / 150) * 0.15;
+                            networkCtx.strokeStyle = `rgba(99, 102, 241, ${opacity})`;
                             networkCtx.lineWidth = 1;
                             networkCtx.beginPath();
                             networkCtx.moveTo(node.x, node.y);

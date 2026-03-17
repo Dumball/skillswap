@@ -32,6 +32,13 @@ const Admin = () => {
     const [auctions, setAuctions] = useState([]);
     const [skills, setSkills] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [confirmConfig, setConfirmConfig] = useState({ show: false, message: '', onConfirm: null });
+    const [toastMessage, setToastMessage] = useState(null);
+
+    const showNotification = (text, type = 'error') => {
+        setToastMessage({ text, type });
+        setTimeout(() => setToastMessage(null), 5000);
+    };
 
     const loadDashboard = async () => {
         setLoading(true);
@@ -68,7 +75,8 @@ const Admin = () => {
             if (currentStatus === 'active') await apiService.banAdminUser(id);
             else await apiService.unbanAdminUser(id);
             loadUsers();
-        } catch (e) { alert('Failed to change user status'); }
+            showNotification(`User ${currentStatus === 'active' ? 'banned' : 'unbanned'} successfully`, 'success');
+        } catch (e) { showNotification('Failed to change user status'); }
     };
 
     const handleVerifySkill = async (id, approve) => {
@@ -76,23 +84,36 @@ const Admin = () => {
             if (approve) await apiService.verifyAdminSkill(id);
             else await apiService.rejectAdminSkill(id);
             loadSkills();
-        } catch (e) { alert('Failed to moderate skill'); }
+            showNotification(`Skill ${approve ? 'verified' : 'rejected'} successfully`, 'success');
+        } catch (e) { showNotification('Failed to moderate skill'); }
     };
 
-    const handleDeleteAuction = async (id) => {
-        if (!window.confirm("Delete this auction?")) return;
-        try {
-            await apiService.deleteAdminAuction(id);
-            loadAuctions();
-        } catch (e) { alert('Failed to delete auction'); }
+    const handleDeleteAuction = (id) => {
+        setConfirmConfig({
+            show: true,
+            message: "Delete this auction?",
+            onConfirm: async () => {
+                try {
+                    await apiService.deleteAdminAuction(id);
+                    loadAuctions();
+                    showNotification('Auction deleted', 'success');
+                } catch (e) { showNotification('Failed to delete auction'); }
+            }
+        });
     };
 
-    const handleCloseAuction = async (id) => {
-        if (!window.confirm("Force close this auction?")) return;
-        try {
-            await apiService.closeAdminAuction(id);
-            loadAuctions();
-        } catch (e) { alert('Failed to close auction'); }
+    const handleCloseAuction = (id) => {
+        setConfirmConfig({
+            show: true,
+            message: "Force close this auction?",
+            onConfirm: async () => {
+                try {
+                    await apiService.closeAdminAuction(id);
+                    loadAuctions();
+                    showNotification('Auction closed', 'success');
+                } catch (e) { showNotification('Failed to close auction'); }
+            }
+        });
     };
 
     if (loading && activeTab === 'dashboard') return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Admin Panel...</div>;
@@ -171,7 +192,7 @@ const Admin = () => {
                                         <td style={{ padding: '16px 8px' }}>{u.name} {u.role === 'admin' ? '🛡️' : ''}</td>
                                         <td style={{ padding: '16px 8px', fontFamily: 'monospace' }}>{u.email}</td>
                                         <td style={{ padding: '16px 8px' }}>
-                                            <span style={{ color: u.status === 'banned' ? '#FF5B5B' : '#00D1FF' }}>{u.status}</span>
+                                            <span style={{ color: u.status === 'banned' ? '#ef4444' : '#22c55e' }}>{u.status}</span>
                                         </td>
                                         <td style={{ padding: '16px 8px' }}>
                                             {u.role !== 'admin' && (
@@ -241,7 +262,7 @@ const Admin = () => {
                                         <td style={{ padding: '16px 8px' }}>{a.status}</td>
                                         <td style={{ padding: '16px 8px', display: 'flex', gap: '8px' }}>
                                             {a.status === 'active' && <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => handleCloseAuction(a.id)}>Force Close</button>}
-                                            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px', background: 'rgba(255, 91, 91, 0.1)', color: '#FF5B5B' }} onClick={() => handleDeleteAuction(a.id)}>Delete</button>
+                                            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid currentColor' }} onClick={() => handleDeleteAuction(a.id)}>Delete</button>
                                         </td>
                                     </tr>
                                 ))}
@@ -250,6 +271,54 @@ const Admin = () => {
                     </div>
                 )}
             </section>
+
+            {toastMessage && (
+                <div style={{
+                    position: 'fixed',
+                    top: '100px',
+                    right: '40px',
+                    zIndex: 2000,
+                    padding: '16px 24px',
+                    borderRadius: '12px',
+                    background: toastMessage.type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(34, 197, 94, 0.9)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                    animation: 'slideInRight 0.3s ease'
+                }}>
+                    <span>{toastMessage.type === 'error' ? '⚠️' : '✅'}</span>
+                    {toastMessage.text}
+                </div>
+            )}
+
+            {confirmConfig.show && (
+                <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', zIndex: 50 }}>
+                    <div style={{ background: '#111827', padding: '24px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', width: '100%', maxWidth: '400px' }}>
+                        <p style={{ color: 'white', marginBottom: '16px' }}>{confirmConfig.message}</p>
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setConfirmConfig({ show: false, message: '', onConfirm: null })}
+                                style={{ padding: '8px 16px', color: '#9CA3AF', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    confirmConfig.onConfirm();
+                                    setConfirmConfig({ show: false, message: '', onConfirm: null });
+                                }}
+                                style={{ padding: '8px 16px', background: '#3B82F6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
