@@ -38,67 +38,66 @@ redis_service: RedisService = None
 orchestrator: AgentOrchestrator = None
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Initialize all services on startup - fault-tolerant, DB failures won't crash the service"""
+import asyncio
+
+async def initialize_services(app: FastAPI):
+    """Background task to initialize heavy services without blocking port binding"""
     global qdrant_service, neo4j_service, redis_service, orchestrator
+    
+    print("Initializing background services...")
+    
+    # 1. Neo4j Connection (includes schema seeding)
+    if neo4j_service:
+        await asyncio.to_thread(neo4j_service.connect)
 
-    print("Starting AI Agent Microservice...")
-
-    # --- Qdrant (optional) ---
-    try:
-        qdrant_service = QdrantService()
-        print("[OK] Qdrant connected")
-    except Exception as e:
-        print(f"[WARN] Qdrant unavailable (vector search disabled): {e}")
-        qdrant_service = None
-
-    # --- Neo4j (optional) ---
-    try:
-        neo4j_service = Neo4jService()
-        print("[OK] Neo4j connected")
-    except Exception as e:
-        print(f"[WARN] Neo4j unavailable (graph search disabled): {e}")
-        neo4j_service = None
-
-    # --- Redis (optional) ---
-    try:
-        redis_service = RedisService()
-        print("[OK] Redis connected")
-    except Exception as e:
-        print(f"[WARN] Redis unavailable (caching disabled): {e}")
-        redis_service = None
-
-    # --- Data Indexer (only if both Qdrant + Neo4j are up) ---
-    if qdrant_service and neo4j_service:
+    # 2. Qdrant Collection (lazy loading model will happen when first used)
+    if qdrant_service:
+        await asyncio.to_thread(qdrant_service.ensure_collection)
+        
+    # 3. Data Seeding (requires both up)
+    if qdrant_service and neo4j_service and qdrant_service.client and neo4j_service.driver:
         try:
             indexer = DataIndexer(qdrant_service, neo4j_service)
             await indexer.seed_initial_data()
-            print("[OK] Data index seeded")
+            print("[OK] Data index seeded in background")
         except Exception as e:
-            print(f"[WARN] Data indexing skipped: {e}")
-    else:
-        print("[WARN] Skipping data indexer (Qdrant or Neo4j offline)")
+            print(f"[WARN] Background data indexing failed: {e}")
+            
+    print("[READY] All background services synchronized")
 
-    # --- Orchestrator (always starts - uses mocked services if needed) ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Fast startup to bind to port, heavy init happens in background"""
+    global qdrant_service, neo4j_service, redis_service, orchestrator
+
+    print("AI Agent Microservice: Starting fast boot...")
+
+    # Quick init of connection pools/clients (non-blocking)
     try:
+        qdrant_service = QdrantService()
+        neo4j_service = Neo4jService()
+        redis_service = RedisService()
+        
         orchestrator = AgentOrchestrator(
             qdrant=qdrant_service,
             neo4j=neo4j_service,
             redis=redis_service
         )
-        print("[OK] Orchestrator ready - LLM endpoints fully operational")
+        print("[OK] Core services instantiated")
     except Exception as e:
-        print(f"[ERROR] Orchestrator failed to start: {e}")
-        raise  # Critical - can't serve any agent without orchestrator
-
-    print("[READY] Agent microservice started successfully!")
+        print(f"[ERROR] Critical failure during boot: {e}")
+        # We still yield to let the server bind and show health=error
+    
+    # Start heavy lifting in background
+    asyncio.create_task(initialize_services(app))
+    
+    print(f"--- READY TO BIND ---")
     yield
 
     # Cleanup
-    if neo4j_service:
+    if neo4j_service and hasattr(neo4j_service, 'driver') and neo4j_service.driver:
         try:
-            neo4j_service.close()
+            neo4j_service.driver.close()
         except Exception:
             pass
     print("Agent microservice shut down cleanly")

@@ -20,21 +20,35 @@ VECTOR_SIZE = 384  # all-MiniLM-L6-v2 dimension
 
 class QdrantService:
     def __init__(self):
-        url = os.getenv("QDRANT_URL", "http://localhost:6333")
-        self.client = QdrantClient(url=url)
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
-        self._ensure_collection()
+        self.url = os.getenv("QDRANT_URL", "http://localhost:6333")
+        self.client = QdrantClient(url=self.url)
+        self._model = None
+        # We don't call _ensure_collection here to avoid blocking startup
+        # It will be called lazily or backgrounded
 
-    def _ensure_collection(self):
-        """Create collection if it doesn't exist"""
+    @property
+    def model(self):
+        """Lazy load the model to avoid blocking bridge startup"""
+        if self._model is None:
+            print("Loading SentenceTransformer model (all-MiniLM-L6-v2)...")
+            self._model = SentenceTransformer("all-MiniLM-L6-v2")
+            print("Model loaded successfully.")
+        return self._model
+
+    def ensure_collection(self):
+        """Create collection if it doesn't exist - can be called backgrounded"""
         try:
             self.client.get_collection(COLLECTION_NAME)
+            print(f"Qdrant collection '{COLLECTION_NAME}' already exists.")
         except Exception:
-            self.client.create_collection(
-                collection_name=COLLECTION_NAME,
-                vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE)
-            )
-            print(f"OK Created Qdrant collection: {COLLECTION_NAME}")
+            try:
+                self.client.create_collection(
+                    collection_name=COLLECTION_NAME,
+                    vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE)
+                )
+                print(f"OK Created Qdrant collection: {COLLECTION_NAME}")
+            except Exception as e:
+                print(f"ERROR creating Qdrant collection: {e}")
 
     def embed(self, text: str) -> List[float]:
         """Generate embedding for a text string"""
