@@ -94,8 +94,9 @@ const Dashboard = ({ onNavigate }) => {
             fetchAllData();
 
             // Sockets for real-time updates
-            const socketUrl = window.location.origin.replace('5173', '5000') || 'http://localhost:5000';
-            const socket = io(`${socketUrl}/auctions`, {
+            // Sockets for real-time updates
+            const socketUrl = import.meta.env.VITE_API_URL || window.location.origin.replace('5173', '5000') || 'http://localhost:5000';
+            const socket = io(socketUrl, {
                 path: '/socket.io'
             });
 
@@ -248,6 +249,7 @@ const Dashboard = ({ onNavigate }) => {
                     </div>
                 </div>
                 
+                {/* expertise and actions grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px', marginBottom: '40px' }}>
                     <div className="stats-card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -283,10 +285,7 @@ const Dashboard = ({ onNavigate }) => {
                                                 className="filter-select" 
                                                 style={{ width: '100%', height: '44px', color: 'white', background: 'rgba(255,255,255,0.05)' }}
                                                 value={newSkill.skill_category}
-                                                onChange={e => {
-                                                    console.log("Category changed to:", e.target.value);
-                                                    setNewSkill({...newSkill, skill_category: e.target.value});
-                                                }}
+                                                onChange={e => setNewSkill({...newSkill, skill_category: e.target.value})}
                                             >
                                                 <option value="Design">Design</option>
                                                 <option value="Development">Development</option>
@@ -308,10 +307,9 @@ const Dashboard = ({ onNavigate }) => {
                         )}
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-                            {/* Verified Skills */}
                             <div className="verified-skills-list">
                                 <h4 style={{ fontSize: '16px', color: 'var(--primary-blue)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>🛡️</span> Verified Expertise ({skills.filter(s => s.verified).length})
+                                    🛡️ Verified Expertise ({skills.filter(s => s.verified).length})
                                 </h4>
                                 {skills.filter(s => s.verified).length > 0 ? (
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
@@ -363,10 +361,9 @@ const Dashboard = ({ onNavigate }) => {
                                 )}
                             </div>
 
-                            {/* Unverified Skills */}
                             <div className="unverified-skills-list">
                                 <h4 style={{ fontSize: '16px', color: '#A0A4B8', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>⏳</span> Verification Needed ({skills.filter(s => !s.verified).length})
+                                    ⏳ Verification Needed ({skills.filter(s => !s.verified).length})
                                 </h4>
                                 {skills.filter(s => !s.verified).length > 0 ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -381,24 +378,18 @@ const Dashboard = ({ onNavigate }) => {
                                                                 <button 
                                                                     onClick={() => handleRemoveSkill(skill.id)}
                                                                     style={{ padding: '4px 8px', background: '#ef4444', border: 'none', borderRadius: '6px', color: 'white', fontSize: '10px', cursor: 'pointer' }}
-                                                                >
-                                                                    Confirm
-                                                                </button>
+                                                                >Confirm</button>
                                                                 <button 
                                                                     onClick={() => setConfirmingDelete(null)}
                                                                     style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', fontSize: '10px', cursor: 'pointer' }}
-                                                                >
-                                                                    No
-                                                                </button>
+                                                                >No</button>
                                                             </div>
                                                         ) : (
                                                             <button 
                                                                 onClick={() => setConfirmingDelete(skill.id)}
                                                                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '16px', opacity: 0.6 }}
                                                                 title="Remove Skill"
-                                                            >
-                                                                🗑️
-                                                            </button>
+                                                            >🗑️</button>
                                                         )}
                                                     </div>
                                                 </div>
@@ -422,26 +413,33 @@ const Dashboard = ({ onNavigate }) => {
                                 className="btn btn-primary" 
                                 style={{ width: '100%', justifyContent: 'center', height: '50px', fontSize: '16px' }}
                                 onClick={() => onNavigate('create-auction')}
-                            >
-                                🎯 Request a Skill Swap
-                            </button>
+                            >🎯 Request a Skill Swap</button>
                             <button 
                                 className="btn btn-secondary" 
                                 style={{ width: '100%', justifyContent: 'center', height: '50px' }}
                                 onClick={() => onNavigate('marketplace')}
-                            >
-                                🔍 Browse Open Requests
-                            </button>
+                            >🔍 Browse Open Requests</button>
                             <button 
                                 className="btn btn-secondary" 
                                 style={{ width: '100%', justifyContent: 'center', height: '50px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
                                 onClick={() => onNavigate('learning-path')}
-                            >
-                                🗺️ View My Learning Path
-                            </button>
+                            >🗺️ View My Learning Path</button>
                             <button 
                                 className="btn btn-secondary" 
                                 style={{ width: '100%', justifyContent: 'center', height: '50px', background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)', color: '#fbbf24' }}
+                                onClick={() => { setActiveTab('verify-skill'); window.history.pushState(null, '', '?tab=verify-skill'); }}
+                            >🏆 Verify My Skills</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '28px', marginBottom: '40px' }}>
+                    <div className="stats-card">
+                        <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Active Auctions ({dashboardData.activeAuctions.length})</h3>
+                        {dashboardData.activeAuctions.length > 0 ? dashboardData.activeAuctions.map(auction => (
+                            <div key={auction.id} className="auction-card" style={{ marginBottom: '16px' }}>
+                                <div className="auction-title">{auction.title}</div>
+                                <div className="auction-category">{auction.skill_category}</div>
                                 <div className="auction-stats">
                                     <div className="auction-stat">
                                         <div className="auction-stat-label">Bids</div>
@@ -475,9 +473,7 @@ const Dashboard = ({ onNavigate }) => {
                                         className="btn btn-primary" 
                                         style={{ padding: '8px 16px', fontSize: '12px', background: 'rgba(0, 209, 255, 0.1)', border: '1px solid var(--primary-blue)', color: 'var(--primary-blue)' }}
                                         onClick={() => setActiveChat({ id: tx.id, otherName })}
-                                    >
-                                        💬 Chat
-                                    </button>
+                                    >💬 Chat</button>
                                 </div>
                             );
                         }) : (
@@ -494,8 +490,33 @@ const Dashboard = ({ onNavigate }) => {
                     />
                 )}
                 
+                {activeTab === 'verify-skill' && (
+                    <div className="stats-card">
+                        <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>🛡️ Skill Verification Center</h3>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>
+                            Verify your expertise to earn credits and boost your reputation for auctions. 
+                            AI-generated tests will evaluate your practical knowledge.
+                        </p>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            {skills.filter(s => !s.verified).length > 0 ? (
+                                skills.filter(s => !s.verified).map(skill => (
+                                    <div key={skill.id} style={{ padding: '24px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                        <h4 style={{ fontSize: '18px', marginBottom: '16px' }}>{skill.skill_name}</h4>
+                                        <SkillVerifier skillName={skill.skill_name} userId={user.id} onVerified={fetchAllData} />
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '40px', background: 'rgba(34, 197, 94, 0.05)', borderRadius: '16px', border: '1px dashed rgba(34, 197, 94, 0.3)' }}>
+                                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+                                    <p style={{ color: 'var(--text-secondary)' }}>All your skills are currently verified or you haven&apos;t added any yet.</p>
+                                    <button className="btn btn-secondary" style={{ marginTop: '20px' }} onClick={() => setShowAddSkill(true)}>Add New Skill</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )}
-                
+
                 {activeTab === 'overview' && (
                     <div className="activity-feed">
                         <h3 style={{ fontSize: '20px', marginBottom: '24px' }}>Recent Activity</h3>

@@ -36,8 +36,8 @@ const TransactionChat = ({ transactionId, otherUserName, onClose }) => {
 
         fetchHistory();
 
-        const socketUrl = window.location.origin.replace('5173', '5000') || 'http://localhost:5000';
-        const newSocket = io(`${socketUrl}/chat`, {
+        const socketUrl = import.meta.env.VITE_API_URL || window.location.origin.replace('5173', '5000') || 'http://localhost:5000';
+        const newSocket = io(socketUrl, {
             path: '/socket.io',
             query: { transactionId }
         });
