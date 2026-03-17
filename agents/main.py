@@ -28,6 +28,20 @@ from models import (
 
 load_dotenv()
 
+# ===== LAZY-LOADED ML MODEL =====
+# Load model only on first use, not during Docker build
+_embedding_model = None
+
+def get_embedding_model():
+    """Lazy load sentence-transformers model on first API request"""
+    global _embedding_model
+    if _embedding_model is None:
+        print("[INIT] Loading sentence-transformers model 'all-MiniLM-L6-v2'...")
+        from sentence_transformers import SentenceTransformer
+        _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+        print("[OK] Embedding model loaded")
+    return _embedding_model
+
 # Initialize Rate Limiter
 limiter = Limiter(key_func=get_remote_address)
 
