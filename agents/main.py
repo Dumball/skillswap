@@ -13,11 +13,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv
 
-from orchestrator import AgentOrchestrator
-from retrieval.qdrant_service import QdrantService
-from retrieval.neo4j_service import Neo4jService
-from retrieval.redis_service import RedisService
-from indexing.indexer import DataIndexer
+from ai_service import generate_skill_test_questions, generate_auction_explanation, verify_skill_with_ai, generate_learning_path
 from models import (
     ChatRequest, ChatResponse,
     AuctionExplainRequest, AuctionExplainResponse,
@@ -28,92 +24,17 @@ from models import (
 
 load_dotenv()
 
-# ===== LAZY-LOADED ML MODEL =====
-# Load model only on first use, not during Docker build
-_embedding_model = None
-
-def get_embedding_model():
-    """Lazy load sentence-transformers model on first API request"""
-    global _embedding_model
-    if _embedding_model is None:
-        print("[INIT] Loading sentence-transformers model 'all-MiniLM-L6-v2'...")
-        from sentence_transformers import SentenceTransformer
-        _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-        print("[OK] Embedding model loaded")
-    return _embedding_model
-
 # Initialize Rate Limiter
 limiter = Limiter(key_func=get_remote_address)
 
-# Global service instances
-qdrant_service: QdrantService = None
-neo4j_service: Neo4jService = None
-redis_service: RedisService = None
-orchestrator: AgentOrchestrator = None
-
-
 import asyncio
-
-async def initialize_services(app: FastAPI):
-    """Background task to initialize heavy services without blocking port binding"""
-    global qdrant_service, neo4j_service, redis_service, orchestrator
-    
-    print("Initializing background services...")
-    
-    # 1. Neo4j Connection (includes schema seeding)
-    if neo4j_service:
-        await asyncio.to_thread(neo4j_service.connect)
-
-    # 2. Qdrant Collection (lazy loading model will happen when first used)
-    if qdrant_service:
-        await asyncio.to_thread(qdrant_service.ensure_collection)
-        
-    # 3. Data Seeding (requires both up)
-    if qdrant_service and neo4j_service and qdrant_service.client and neo4j_service.driver:
-        try:
-            indexer = DataIndexer(qdrant_service, neo4j_service)
-            await indexer.seed_initial_data()
-            print("[OK] Data index seeded in background")
-        except Exception as e:
-            print(f"[WARN] Background data indexing failed: {e}")
-            
-    print("[READY] All background services synchronized")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Fast startup to bind to port, heavy init happens in background"""
-    global qdrant_service, neo4j_service, redis_service, orchestrator
-
-    print("AI Agent Microservice: Starting fast boot...")
-
-    # Quick init of connection pools/clients (non-blocking)
-    try:
-        qdrant_service = QdrantService()
-        neo4j_service = Neo4jService()
-        redis_service = RedisService()
-        
-        orchestrator = AgentOrchestrator(
-            qdrant=qdrant_service,
-            neo4j=neo4j_service,
-            redis=redis_service
-        )
-        print("[OK] Core services instantiated")
-    except Exception as e:
-        print(f"[ERROR] Critical failure during boot: {e}")
-        # We still yield to let the server bind and show health=error
-    
-    # Start heavy lifting in background
-    asyncio.create_task(initialize_services(app))
-    
+    """Fast startup - no heavy services needed with API-based approach"""
+    print("AI Agent Microservice: Starting...")
     print(f"--- READY TO BIND ---")
     yield
-
-    # Cleanup
-    if neo4j_service and hasattr(neo4j_service, 'driver') and neo4j_service.driver:
-        try:
-            neo4j_service.driver.close()
-        except Exception:
-            pass
     print("Agent microservice shut down cleanly")
 
 
@@ -148,18 +69,9 @@ async def health():
 async def chat(request: ChatRequest, req: Request):
     """Portfolio Assistant Agent - general questions about SkillSwap"""
     try:
-        if redis_service:
-            cached = await redis_service.get_cached(f"chat:{request.message[:80]}")
-            if cached:
-                return ChatResponse(response=cached, cached=True, agent="portfolio_assistant")
-
-        result = await orchestrator.run_portfolio_assistant(
-            message=request.message,
-            session_id=request.session_id
-        )
-        if redis_service:
-            await redis_service.cache(f"chat:{request.message[:80]}", result["response"], ttl=300)
-        return ChatResponse(**result, cached=False)
+        # For now, return a simple response
+        # In production, you could call Groq for dynamic responses
+        return ChatResponse(response="Feature powered by Groq AI API", cached=False, agent="portfolio_assistant")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -168,11 +80,8 @@ async def chat(request: ChatRequest, req: Request):
 async def explain_auction(request: AuctionExplainRequest):
     """Auction Explainer Agent - explains what a specific auction is asking for"""
     try:
-        result = await orchestrator.run_auction_explainer(
-            auction_id=request.auction_id,
-            question=request.question
-        )
-        return AuctionExplainResponse(**result)
+        explanation = generate_auction_explanation(request.question)
+        return AuctionExplainResponse(explanation=explanation, auction_id=request.auction_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -181,12 +90,12 @@ async def explain_auction(request: AuctionExplainRequest):
 async def verify_skill(request: SkillVerifyRequest):
     """Skill Verification Agent - generates and evaluates skill challenges"""
     try:
-        result = await orchestrator.run_skill_verifier(
+        result = verify_skill_with_ai(request.skill_name, request.user_answer or "")
+        return SkillVerifyResponse(
+            is_valid=result.get("is_valid", True),
             skill_name=request.skill_name,
-            user_id=request.user_id,
-            user_answer=request.user_answer
+            assessment=result.get("assessment", "Skill verified")
         )
-        return SkillVerifyResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -195,11 +104,12 @@ async def verify_skill(request: SkillVerifyRequest):
 async def generate_test(request: SkillTestRequest):
     """Skill Verification Agent - generates a structured multi-question test"""
     try:
-        result = await orchestrator.run_skill_test_generator(
+        test_data = generate_skill_test_questions(request.skill_name, request.difficulty or "medium")
+        return SkillTestResponse(
             skill_name=request.skill_name,
-            difficulty=request.difficulty
+            difficulty=request.difficulty or "medium",
+            questions=test_data.get("questions", [])
         )
-        return SkillTestResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -209,18 +119,13 @@ async def generate_test(request: SkillTestRequest):
 async def learning_path(request: LearningPathRequest, req: Request):
     """Learning Path Agent - personalized skill roadmaps"""
     try:
-        if redis_service:
-            cached = await redis_service.get_cached(f"path:{request.target_skill}")
-            if cached:
-                return LearningPathResponse(path=cached, target_skill=request.target_skill, cached=True, agent="learning_path")
-
-        result = await orchestrator.run_learning_path(
+        path_data = generate_learning_path(request.target_skill, "beginner")
+        return LearningPathResponse(
+            path=path_data.get("steps", []),
             target_skill=request.target_skill,
-            current_skills=request.current_skills
+            cached=False,
+            agent="learning_path"
         )
-        if redis_service:
-            await redis_service.cache(f"path:{request.target_skill}", result["path"], ttl=3600)
-        return LearningPathResponse(**result, cached=False)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
