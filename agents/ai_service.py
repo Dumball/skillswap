@@ -9,7 +9,7 @@ from typing import Optional
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama3-70b-8192"
+GROQ_MODEL = "llama-3.1-8b-instant"
 
 def call_groq(user_prompt: str, system_prompt: str = "You are a helpful AI assistant.", temperature: float = 0.7) -> dict:
     """
