@@ -9,6 +9,9 @@ const dotenv = require('dotenv');
 // Load environment config
 dotenv.config();
 
+// Load database initialization
+const { initDatabase } = require('./src/config/db');
+
 // Initialize express app
 const app = express();
 app.set('trust proxy', 1);
@@ -80,8 +83,17 @@ console.log('📌 Port:', PORT);
 console.log('📌 Frontend URL:', process.env.FRONTEND_URL || 'any origin');
 console.log('='.repeat(50) + '\n');
 
-server.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-    console.log(`📝 Register: POST http://localhost:${PORT}/api/auth/register`);
-});
+// Start server and initialize database
+const startServer = async () => {
+    console.log('🔄 Initializing database...');
+    await initDatabase();
+    
+    server.listen(PORT, () => {
+        console.log(`✅ Server running on port ${PORT}`);
+        console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+        console.log(`📝 Register: POST http://localhost:${PORT}/api/auth/register`);
+        console.log(`🔑 Login: POST http://localhost:${PORT}/api/auth/login`);
+    });
+};
+
+startServer();
