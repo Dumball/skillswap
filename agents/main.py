@@ -59,6 +59,17 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+async def root():
+    """Root endpoint - confirms agent service is running"""
+    return {
+        "status": "Agent is running",
+        "service": "SkillSwap AI Agents",
+        "version": "1.0.0",
+        "message": "Use /docs for interactive API documentation"
+    }
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "SkillSwap AI Agents", "version": "1.0.0"}
