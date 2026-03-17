@@ -112,9 +112,10 @@ async def generate_test(request: SkillTestRequest):
         if "error" in test_data:
             raise HTTPException(status_code=500, detail=test_data["error"])
         return SkillTestResponse(
-            skill_name=request.skill_name,
-            difficulty=request.difficulty or "medium",
-            questions=test_data.get("questions", [])
+            success=True,
+            test=None,
+            questions=test_data.get("questions", []),
+            agent="skill_verifier"
         )
     except HTTPException:
         raise
@@ -138,10 +139,10 @@ async def generate_test_get(skill: str = None, difficulty: str = "medium"):
     
     print(f"[TEST] Success: Generated questions for {skill}")
     return {
-        "skill_name": skill,
-        "difficulty": difficulty,
+        "success": True,
+        "test": None,
         "questions": test_data.get("questions", []),
-        "status": "success"
+        "agent": "skill_verifier"
     }
 
 
