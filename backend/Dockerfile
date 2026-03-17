@@ -11,8 +11,8 @@ RUN npm install
 # Copy Setup
 COPY . .
 
-# Expose API PORT
-EXPOSE 5000
+# Expose dynamic port
+EXPOSE ${PORT:-5000}
 
 # Run Application
 CMD ["npm", "start"]
