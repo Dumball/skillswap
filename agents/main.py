@@ -13,7 +13,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv
 
-from ai_service import generate_skill_test_questions, generate_auction_explanation, verify_skill_with_ai, generate_learning_path
+from ai_service import call_groq, generate_skill_test_questions, generate_auction_explanation, verify_skill_with_ai, generate_learning_path
 from models import (
     ChatRequest, ChatResponse,
     AuctionExplainRequest, AuctionExplainResponse,
@@ -75,86 +75,184 @@ async def health():
     return {"status": "ok", "service": "SkillSwap AI Agents", "version": "1.0.0"}
 
 
-@app.post("/agents/chat", response_model=ChatResponse)
+@app.post("/agents/chat")
 @limiter.limit("5/minute")
 async def chat(request: ChatRequest, req: Request):
     """Portfolio Assistant Agent - general questions about SkillSwap"""
     try:
-        # For now, return a simple response
-        # In production, you could call Groq for dynamic responses
-        return ChatResponse(response="Feature powered by Groq AI API", cached=False, agent="portfolio_assistant")
+        # Try to use Groq API for dynamic responses
+        try:
+            result = call_groq(
+                user_prompt=request.message,
+                system_prompt="You are a helpful SkillSwap assistant. Answer questions about the platform, auctions, and skill exchanges. Be concise.",
+                temperature=0.7
+            )
+            if "error" in result:
+                # Fallback to simple response if Groq fails
+                response_text = "I'm here to help! The AI service had an issue, but I can still assist."
+            else:
+                response_text = result.get("content", "I'm ready to help!")
+        except Exception as groq_err:
+            print(f"[CHAT] Groq error: {groq_err}")
+            response_text = "I'm here to help! The AI service had an issue, but I can still assist."
+        
+        return {
+            "response": response_text,
+            "agent": "portfolio_assistant",
+            "cached": False,
+            "success": True
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[CHAT] Error: {str(e)}")
+        return {
+            "response": "The AI service encountered an error. Please try again.",
+            "agent": "portfolio_assistant",
+            "cached": False,
+            "success": False,
+            "error": str(e)
+        }
 
 
-@app.post("/agents/explain-auction", response_model=AuctionExplainResponse)
+@app.post("/agents/explain-auction")
 async def explain_auction(request: AuctionExplainRequest):
     """Auction Explainer Agent - explains what a specific auction is asking for"""
     try:
-        result = generate_auction_explanation(request.question)
+        result = generate_auction_explanation(request.question or "Explain this auction")
         if "error" in result:
-            raise HTTPException(status_code=500, detail=result["error"])
-        return AuctionExplainResponse(explanation=result.get("explanation", ""), auction_id=request.auction_id)
-    except HTTPException:
-        raise
+            return {
+                "explanation": "Could not generate explanation. Please try again.",
+                "auction_id": request.auction_id,
+                "agent": "auction_explainer",
+                "success": False
+            }
+        return {
+            "explanation": result.get("explanation", ""),
+            "auction_id": request.auction_id,
+            "agent": "auction_explainer",
+            "success": True
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[AUCTION] Error: {str(e)}")
+        return {
+            "explanation": "Could not generate explanation. Please try again.",
+            "auction_id": request.auction_id if hasattr(request, 'auction_id') else "unknown",
+            "agent": "auction_explainer",
+            "success": False,
+            "error": str(e)
+        }
 
 
-@app.post("/agents/verify-skill", response_model=SkillVerifyResponse)
+@app.post("/agents/verify-skill")
 async def verify_skill(request: SkillVerifyRequest):
     """Skill Verification Agent - generates and evaluates skill challenges"""
     try:
         result = verify_skill_with_ai(request.skill_name, request.user_answer or "")
-        return SkillVerifyResponse(
-            is_valid=result.get("is_valid", True),
-            skill_name=request.skill_name,
-            assessment=result.get("assessment", "Skill verified")
-        )
+        if "error" in result:
+            return {
+                "mode": "evaluation",
+                "challenge": None,
+                "evaluation": "Verification failed. Please try again.",
+                "score": 0,
+                "passed": False,
+                "agent": "skill_verifier",
+                "success": False
+            }
+        return {
+            "mode": "evaluation",
+            "challenge": None,
+            "evaluation": result.get("assessment", "Skill verified"),
+            "score": result.get("score", 0),
+            "passed": result.get("is_valid", False),
+            "agent": "skill_verifier",
+            "success": True
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[VERIFY] Error: {str(e)}")
+        return {
+            "mode": "evaluation",
+            "challenge": None,
+            "evaluation": "Verification failed. Please try again.",
+            "score": 0,
+            "passed": False,
+            "agent": "skill_verifier",
+            "success": False,
+            "error": str(e)
+        }
 
 
-@app.post("/agents/generate-test", response_model=SkillTestResponse)
+@app.post("/agents/generate-test")
 async def generate_test(request: SkillTestRequest):
     """Skill Verification Agent - generates a structured multi-question test"""
     try:
         test_data = generate_skill_test_questions(request.skill_name, request.difficulty or "medium")
         if "error" in test_data:
-            raise HTTPException(status_code=500, detail=test_data["error"])
-        return SkillTestResponse(
-            success=True,
-            test=None,
-            questions=test_data.get("questions", []),
-            agent="skill_verifier"
-        )
-    except HTTPException:
-        raise
+            return {
+                "success": False,
+                "test": None,
+                "questions": [],
+                "agent": "skill_verifier",
+                "error": test_data.get("error", "Could not generate test")
+            }
+        return {
+            "success": True,
+            "test": None,
+            "questions": test_data.get("questions", []),
+            "agent": "skill_verifier"
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[TEST] Error: {str(e)}")
+        return {
+            "success": False,
+            "test": None,
+            "questions": [],
+            "agent": "skill_verifier",
+            "error": str(e)
+        }
 
 
 @app.get("/generate-test")
 async def generate_test_get(skill: str = None, difficulty: str = "medium"):
     """GET endpoint for generating test questions - with query parameters"""
     if not skill or not skill.strip():
-        raise HTTPException(status_code=400, detail="Skill parameter is required and cannot be empty")
+        return {
+            "success": False,
+            "test": None,
+            "questions": [],
+            "agent": "skill_verifier",
+            "error": "Skill parameter is required"
+        }
     
-    print(f"\n[TEST] Generating test for skill: {skill}, difficulty: {difficulty}")
-    
-    test_data = generate_skill_test_questions(skill.strip(), difficulty)
-    
-    if "error" in test_data:
-        print(f"[TEST] Error: {test_data['error']}")
-        raise HTTPException(status_code=500, detail=test_data["error"])
-    
-    print(f"[TEST] Success: Generated questions for {skill}")
-    return {
-        "success": True,
-        "test": None,
-        "questions": test_data.get("questions", []),
-        "agent": "skill_verifier"
-    }
+    try:
+        print(f"\n[TEST] Generating test for skill: {skill}, difficulty: {difficulty}")
+        
+        test_data = generate_skill_test_questions(skill.strip(), difficulty)
+        
+        if "error" in test_data:
+            print(f"[TEST] Error: {test_data['error']}")
+            return {
+                "success": False,
+                "test": None,
+                "questions": [],
+                "agent": "skill_verifier",
+                "error": test_data["error"]
+            }
+        
+        print(f"[TEST] Success: Generated questions for {skill}")
+        return {
+            "success": True,
+            "test": None,
+            "questions": test_data.get("questions", []),
+            "agent": "skill_verifier"
+        }
+    except Exception as e:
+        print(f"[TEST] Error: {str(e)}")
+        return {
+            "success": False,
+            "test": None,
+            "questions": [],
+            "agent": "skill_verifier",
+            "error": str(e)
+        }
 
 
 @app.get("/debug/groq")
@@ -180,24 +278,38 @@ async def debug_groq():
     }
 
 
-@app.post("/agents/learning-path", response_model=LearningPathResponse)
+@app.post("/agents/learning-path")
 @limiter.limit("3/minute")
 async def learning_path(request: LearningPathRequest, req: Request):
     """Learning Path Agent - personalized skill roadmaps"""
     try:
         path_data = generate_learning_path(request.target_skill, "beginner")
         if "error" in path_data:
-            raise HTTPException(status_code=500, detail=path_data["error"])
-        return LearningPathResponse(
-            path=path_data.get("steps", []),
-            target_skill=request.target_skill,
-            cached=False,
-            agent="learning_path"
-        )
-    except HTTPException:
-        raise
+            return {
+                "path": [],
+                "target_skill": request.target_skill,
+                "agent": "learning_path",
+                "cached": False,
+                "success": False,
+                "error": path_data.get("error", "Could not generate learning path")
+            }
+        return {
+            "path": path_data.get("steps", []),
+            "target_skill": request.target_skill,
+            "agent": "learning_path",
+            "cached": False,
+            "success": True
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[LEARNING] Error: {str(e)}")
+        return {
+            "path": [],
+            "target_skill": request.target_skill if hasattr(request, 'target_skill') else "unknown",
+            "agent": "learning_path",
+            "cached": False,
+            "success": False,
+            "error": str(e)
+        }
 
 
 @app.get("/agents/architecture")
