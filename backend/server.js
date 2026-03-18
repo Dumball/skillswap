@@ -27,33 +27,21 @@ app.use(helmet());
 
 // CORS Configuration - Allow frontend and localhost for development
 const corsOptions = {
-    origin: function(origin, callback) {
-        const allowedOrigins = [
-            process.env.FRONTEND_URL,
-            'http://localhost:3000',
-            'http://localhost:5173',
-            'http://localhost:5000'
-        ].filter(Boolean);
-        
-        // In development, also allow requests with no origin (like mobile or curl]
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(null, true); // Allow all for now (can restrict later)
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: '*', // Allow all origins for now (can restrict to FRONTEND_URL later)
+    credentials: false,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
 
-// Log CORS info on startup
-if (process.env.NODE_ENV === 'development') {
-    console.log('[CORS] Allowed origins:', [process.env.FRONTEND_URL, 'localhost:3000', 'localhost:5173'].filter(Boolean));
-}
+// Log CORS info
+console.log('\n[CORS] Configuration:')
+console.log('[CORS] Allowed origins: *')
+console.log('[CORS] Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH')
+console.log('[CORS] Headers: Content-Type, Authorization, Accept\n');
+app.use(express.json());
 
 // Rate Limiter
 const apiLimiter = rateLimit({
