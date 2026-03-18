@@ -9,7 +9,5 @@ COPY . .
 
 EXPOSE 8000
 
-# Use shell form to support environment variable substitution
-# Railway injects PORT env var dynamically
-# Use --reload is disabled for production
+# Simple shell form - Railway properly injects PORT env var
 CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info
