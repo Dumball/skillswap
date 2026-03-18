@@ -32,10 +32,25 @@ import asyncio
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Fast startup - no heavy services needed with API-based approach"""
-    print("AI Agent Microservice: Starting...")
-    print(f"--- READY TO BIND ---")
+    try:
+        print("\n" + "="*60)
+        print("🚀 AI Agent Microservice: Starting...")
+        print("="*60)
+        print(f"📍 GROQ_API_KEY set: {bool(os.getenv('GROQ_API_KEY'))}")
+        print(f"📍 Environment: {os.getenv('NODE_ENV', 'development')}")
+        print(f"📍 Model: llama-3.1-8b-instant")
+        print("="*60)
+        print("✅ READY TO BIND")
+        print("="*60 + "\n")
+    except Exception as e:
+        print(f"⚠️  Error during startup: {e}")
+    
     yield
-    print("Agent microservice shut down cleanly")
+    
+    try:
+        print("\n✅ Agent microservice shut down cleanly\n")
+    except Exception as e:
+        print(f"⚠️  Error during shutdown: {e}")
 
 
 app = FastAPI(
@@ -66,13 +81,21 @@ async def root():
         "status": "Agent is running",
         "service": "SkillSwap AI Agents",
         "version": "1.0.0",
-        "message": "Use /docs for interactive API documentation"
+        "message": "Use /docs for interactive API documentation",
+        "timestamp": __import__('time').time()
     }
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "SkillSwap AI Agents", "version": "1.0.0"}
+    """Health check - simple endpoint to verify service is responsive"""
+    return {
+        "status": "ok",
+        "service": "SkillSwap AI Agents",
+        "version": "1.0.0",
+        "groq_configured": bool(os.getenv("GROQ_API_KEY")),
+        "timestamp": __import__('time').time()
+    }
 
 
 @app.post("/agents/chat")
@@ -344,20 +367,38 @@ async def architecture():
 import uvicorn
 
 if __name__ == "__main__":
-    # Render and other PaaS providers inject PORT environment variable
-    # We prioritize PORT, then AGENTS_PORT, then default to 8000
-    port = int(os.environ.get("PORT", os.environ.get("AGENTS_PORT", 8000)))
-    
-    print(f"--- Starting Server ---")
-    print(f"Host: 0.0.0.0")
-    print(f"Port: {port}")
-    print(f"-----------------------")
-    
-    uvicorn.run(
-        "main:app", 
-        host="0.0.0.0", 
-        port=port, 
-        log_level="info",
-        proxy_headers=True,
-        forwarded_allow_ips="*"
-    )
+    try:
+        # Render and other PaaS providers inject PORT environment variable
+        # We prioritize PORT, then AGENTS_PORT, then default to 8000
+        port = int(os.environ.get("PORT", os.environ.get("AGENTS_PORT", 8000)))
+        
+        print("\n" + "="*70)
+        print("🚀 SkillSwap AI Agent Microservice - Starting Server")
+        print("="*70)
+        print(f"🔗 Host: 0.0.0.0")
+        print(f"🔗 Port: {port}")
+        print(f"📝 Log Level: info")
+        print(f"🔐 GROQ_API_KEY: {'✅ Set' if os.getenv('GROQ_API_KEY') else '❌ Not Set'}")
+        print("="*70)
+        print("📚 Available Endpoints:")
+        print("  GET  /                    - Root status")
+        print("  GET  /health              - Health check")
+        print("  GET  /docs                - API documentation")
+        print("  POST /agents/chat         - Chat endpoint")
+        print("  POST /agents/learning-path - Learning path generation")
+        print("  POST /agents/verify-skill - Skill verification")
+        print("="*70 + "\n")
+        
+        uvicorn.run(
+            "main:app", 
+            host="0.0.0.0", 
+            port=port, 
+            log_level="info",
+            proxy_headers=True,
+            forwarded_allow_ips="*"
+        )
+    except Exception as e:
+        print(f"❌ STARTUP ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        exit(1)
