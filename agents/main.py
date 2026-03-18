@@ -86,6 +86,23 @@ async def root():
     }
 
 
+@app.get("/routes")
+async def list_routes():
+    """Debug endpoint - list all available routes"""
+    routes = []
+    for route in app.routes:
+        if hasattr(route, 'path') and hasattr(route, 'methods'):
+            routes.append({
+                "path": route.path,
+                "methods": list(route.methods) if route.methods else ["GET"]
+            })
+    return {
+        "total_routes": len(routes),
+        "routes": sorted(routes, key=lambda x: x['path']),
+        "timestamp": __import__('time').time()
+    }
+
+
 @app.get("/health")
 async def health():
     """Health check - simple endpoint to verify service is responsive"""
@@ -102,6 +119,8 @@ async def health():
 @limiter.limit("5/minute")
 async def chat(request: ChatRequest, req: Request):
     """Portfolio Assistant Agent - general questions about SkillSwap"""
+    print(f"\n[CHAT] 🔵 Request received")
+    print(f"[CHAT] Message: {request.message[:100]}")
     try:
         # Try to use Groq API for dynamic responses
         try:
@@ -119,6 +138,7 @@ async def chat(request: ChatRequest, req: Request):
             print(f"[CHAT] Groq error: {groq_err}")
             response_text = "I'm here to help! The AI service had an issue, but I can still assist."
         
+        print(f"[CHAT] ✅ Responding to user")
         return {
             "response": response_text,
             "agent": "portfolio_assistant",
@@ -126,7 +146,7 @@ async def chat(request: ChatRequest, req: Request):
             "success": True
         }
     except Exception as e:
-        print(f"[CHAT] Error: {str(e)}")
+        print(f"[CHAT] ❌ Error: {str(e)}")
         return {
             "response": "The AI service encountered an error. Please try again.",
             "agent": "portfolio_assistant",
@@ -305,9 +325,13 @@ async def debug_groq():
 @limiter.limit("3/minute")
 async def learning_path(request: LearningPathRequest, req: Request):
     """Learning Path Agent - personalized skill roadmaps"""
+    print(f"\n[LEARNING] 🔵 Request received")
+    print(f"[LEARNING] Target skill: {request.target_skill}")
+    print(f"[LEARNING] Current skills: {request.current_skills or []}")
     try:
         path_data = generate_learning_path(request.target_skill, "beginner")
         if "error" in path_data:
+            print(f"[LEARNING] ❌ Error from generate_learning_path: {path_data['error']}")
             return {
                 "path": [],
                 "target_skill": request.target_skill,
@@ -316,6 +340,7 @@ async def learning_path(request: LearningPathRequest, req: Request):
                 "success": False,
                 "error": path_data.get("error", "Could not generate learning path")
             }
+        print(f"[LEARNING] ✅ Generated learning path with {len(path_data.get('steps', []))} steps")
         return {
             "path": path_data.get("steps", []),
             "target_skill": request.target_skill,
@@ -324,7 +349,9 @@ async def learning_path(request: LearningPathRequest, req: Request):
             "success": True
         }
     except Exception as e:
-        print(f"[LEARNING] Error: {str(e)}")
+        print(f"[LEARNING] ❌ Exception: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {
             "path": [],
             "target_skill": request.target_skill if hasattr(request, 'target_skill') else "unknown",
