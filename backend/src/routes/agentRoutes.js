@@ -7,25 +7,43 @@ const router = express.Router();
 
 const AGENT_SERVICE_URL = process.env.AGENT_SERVICE_URL || 'http://localhost:8000';
 
+console.log('\n[AGENT ROUTES] Initialized');
+console.log(`[AGENT ROUTES] Service URL: ${AGENT_SERVICE_URL}`);
+console.log('[AGENT ROUTES] Routes available:');
+console.log('  POST /api/agents/chat');
+console.log('  POST /api/agents/explain-auction');
+console.log('  POST /api/agents/verify-skill');
+console.log('  POST /api/agents/learning-path');
+console.log('  GET  /api/agents/architecture');
+console.log('  GET  /api/agents/health\n');
+
 // Simple proxy helper
 async function proxyToAgent(path, body, res) {
     try {
-        const response = await fetch(`${AGENT_SERVICE_URL}${path}`, {
+        const fullUrl = `${AGENT_SERVICE_URL}${path}`;
+        console.log(`\n[PROXY] Sending to agent: POST ${fullUrl}`)
+        console.log(`[PROXY] Body:`, JSON.stringify(body).substring(0, 200))
+        
+        const response = await fetch(fullUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
 
+        console.log(`[PROXY] Agent response status: ${response.status}`)
+        
         if (!response.ok) {
             const err = await response.json().catch(() => ({ message: 'Agent service error' }));
+            console.log(`[PROXY] Error from agent:`, err)
             return res.status(response.status).json(err);
         }
 
         const data = await response.json();
+        console.log(`[PROXY] Success from agent, returning to client`)
         return res.json(data);
     } catch (error) {
         // Agent service might be offline - return friendly fallback
-        console.error(`Agent proxy error (${path}):`, error.message);
+        console.error(`[PROXY] Agent proxy error (${path}):`, error.message);
         return res.status(503).json({
             error: 'AI Agent service is currently offline.',
             message: 'Start the Python agent service with: cd agents && uvicorn main:app --reload',
